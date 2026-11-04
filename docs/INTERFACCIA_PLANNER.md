@@ -1,5 +1,7 @@
 # Interfaccia blockchain → Social Impact Planner
 
+> Aggiornamento: per il planner e la chat prevalgono [AI_E_DATI.md](AI_E_DATI.md) e [DATA_PIPELINE.md](DATA_PIPELINE.md). Restano validi gli eventi e le regole di indicizzazione qui descritti; la granularità di output passa ai quartieri tramite registro geografico dei punti. Generazione via DeepSeek API; embedding e ricerca locale con QVAC secondo RAG_QVAC_DEEPSEEK.md.
+
 Specifiche per il collega che sviluppa analisi, AI e dataset. Leggere insieme a [IMPLEMENTAZIONE.md](IMPLEMENTAZIONE.md).
 
 ## Responsabilità e dati

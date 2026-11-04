@@ -1,0 +1,147 @@
+{
+  "attempted_at": "2026-11-04T11:15:43.794765+00:00",
+  "datasets": [
+    {
+      "file": "popolazione_quartieri_2025.csv",
+      "url": "https://www.comune.torino.it/media/10258",
+      "reference": "2025",
+      "status": "available",
+      "bytes": 957,
+      "sha256": "044a7b759889ab6108ac2296b07943a9b9a8f97da9f98514017ce714c1973f4c"
+    },
+    {
+      "file": "popolazione_quartieri_2025.pdf",
+      "url": "https://www.comune.torino.it/media/10259",
+      "reference": "2025",
+      "status": "available",
+      "bytes": 57854,
+      "sha256": "678cbdaba311a8d45a535ba2b958498254dd797e955d2de623a0198bf14b0203"
+    },
+    {
+      "file": "popolazione_zone_statistiche_2025.csv",
+      "url": "https://www.comune.torino.it/media/9694",
+      "reference": "2025",
+      "status": "available",
+      "bytes": 3779,
+      "sha256": "93624de370c003ebcfe56fd8a96297752a4be49a6598ec072b7e179e28f56f3d"
+    },
+    {
+      "file": "popolazione_eta_circoscrizioni_2025.csv",
+      "url": "https://www.comune.torino.it/media/9707",
+      "reference": "2025",
+      "status": "available",
+      "bytes": 4638,
+      "sha256": "a523b8867218e4c4be97ab063e8c19c9a346321250f1f0ebe8b6cf202b827ad5"
+    },
+    {
+      "file": "famiglie_componenti_circoscrizioni_2025.csv",
+      "url": "https://www.comune.torino.it/media/9723",
+      "reference": "2025",
+      "status": "available",
+      "bytes": 660,
+      "sha256": "65b0f8ecf4b34f87e29258d2a2361c2dcd92885cfaef9f4305ee220c6d6c5115"
+    },
+    {
+      "file": "famiglie_tipologia_circoscrizioni_2025.pdf",
+      "url": "https://www.comune.torino.it/media/9719",
+      "reference": "2025",
+      "status": "available",
+      "bytes": 66869,
+      "sha256": "9f7fe19740b4098f6fe4e5ece921c43bf31f3807a49e8d1a911f13eac63add30"
+    },
+    {
+      "file": "assistenza_economica_servizi_sociali_2024.pdf",
+      "url": "https://www.comune.torino.it/media/8355",
+      "reference": "2024",
+      "status": "available",
+      "bytes": 224631,
+      "sha256": "4b88e8fc2f12ae93c1077ff28408bf517cd8034f5b77e1dfa5538c60d2a615ed"
+    },
+    {
+      "file": "idise_piemonte_2023.zip",
+      "url": "https://www.istat.it/wp-content/uploads/2026/10/R01_Piemonte_IDISE_2023.zip",
+      "reference": "2023",
+      "status": "available",
+      "bytes": 10654739,
+      "sha256": "56be6f409b2b4b7f01c7140c6aa4b960d6f8f308f1dfdda0676b86b445367f8a"
+    },
+    {
+      "file": "idise_nota_informativa_2023.pdf",
+      "url": "https://www.istat.it/wp-content/uploads/2025/12/Nota-Informativa-idise-2023.pdf",
+      "reference": "2023",
+      "status": "available",
+      "bytes": 366422,
+      "sha256": "db6daba43709a781888341393d428ec9ac27e0445ee423df2515d15e0481ffc0"
+    },
+    {
+      "file": "idise_nota_metodologica_2023.pdf",
+      "url": "https://www.istat.it/wp-content/uploads/2025/12/Nota-Metodologica-idise-2023.pdf",
+      "reference": "2023",
+      "status": "available",
+      "bytes": 515324,
+      "sha256": "31a4ccfae418b1672d5e40a4645b97561ce53db8ae26acf5d8534f6262cc68cc"
+    },
+    {
+      "file": "ex_quartieri.zip",
+      "url": "http://geoportale.comune.torino.it/geodati/zip/ex_quartieri.zip",
+      "reference": "confini storici; metadati 2025",
+      "resolved_url": "http://geoportale.comune.torino.it/geodati/zip/ex_quartieri.zip",
+      "status": "downloaded",
+      "bytes": 49970,
+      "sha256": "e83925d3184a4e50a9518a14b1a6cc189ad62ced79100d385c5b367ac8a5e2d3"
+    },
+    {
+      "file": "zone_statistiche_geo.zip",
+      "url": "http://geoportale.comune.torino.it/geodati/zip/zone_statistiche_geo.zip",
+      "reference": "revisione 2024",
+      "resolved_url": "http://geoportale.comune.torino.it/geodati/zip/zone_statistiche_geo.zip",
+      "status": "downloaded",
+      "bytes": 156031,
+      "sha256": "269c9caa2ea9a8a495e005c1aba5d593b24eca4f33e482fad0813a759876fa34"
+    },
+    {
+      "file": "zone_statistiche_csv.zip",
+      "url": "http://geoportale.comune.torino.it/geodati/zip/zone_statistiche_csv.zip",
+      "reference": "revisione 2024",
+      "resolved_url": "http://geoportale.comune.torino.it/geodati/zip/zone_statistiche_csv.zip",
+      "status": "downloaded",
+      "bytes": 166498,
+      "sha256": "54ae0e5b3e18a5522f42b83f5e9d94385752757d51f77f93d35fe35684aec3f9"
+    },
+    {
+      "file": "circoscrizioni_geo.zip",
+      "url": "http://geoportale.comune.torino.it/geodati/zip/circoscrizioni_geo.zip",
+      "reference": "confini",
+      "resolved_url": "http://geoportale.comune.torino.it/geodati/zip/circoscrizioni_geo.zip",
+      "status": "downloaded",
+      "bytes": 37656,
+      "sha256": "75b59ef0348dce03bb45602a989eebb814597771fbbfaf04b87c64ffb4cff0df"
+    },
+    {
+      "file": "attivita_commerciali_geo.zip",
+      "url": "http://geoportale.comune.torino.it/geodati/zip/attivita_commerciali_geo.zip",
+      "reference": "revisione 2025",
+      "resolved_url": "http://geoportale.comune.torino.it/geodati/zip/attivita_commerciali_geo.zip",
+      "status": "downloaded",
+      "bytes": 1865539,
+      "sha256": "e78962e26aea9e4c06cb3db51369519df40367c42bf4bf03db89dacd0bcddf6e"
+    },
+    {
+      "file": "strutture_socio_assistenziali_csv.zip",
+      "url": "http://geoportale.comune.torino.it/geodati/zip/strutture_socio_assistenziali_csv.zip",
+      "reference": "revisione dichiarata 2013; da verificare",
+      "resolved_url": "http://geoportale.comune.torino.it/geodati/zip/strutture_socio_assistenziali_csv.zip",
+      "status": "downloaded",
+      "bytes": 7477,
+      "sha256": "08dfe057a5f3b7389812e39ca052268aaaaf017bd199bb00262b9961e771c8f3"
+    },
+    {
+      "file": "servizi_sociali_piemonte_2024.pdf",
+      "url": "https://www.regione.piemonte.it/web/media/57686/download",
+      "reference": "2024; edizione 2026",
+      "status": "available",
+      "bytes": 3578286,
+      "sha256": "1a47a7095c70f87c115c07f90dd97d89021301e5f003f088159c96042c6e9993"
+    }
+  ]
+}
