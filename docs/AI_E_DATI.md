@@ -11,7 +11,7 @@ I dettagli operativi di seguito sono default proposti per iniziare senza ulterio
 ## Componenti
 
 - `analytics/`: Python, pandas, openpyxl, geopandas e SQLite per importazioni, join geografici, indicatori e ranking. Bloccare dipendenze compatibili in un lockfile.
-- `planner/`: Node.js/TypeScript con viem per indicizzazione eventi e server HTTP per chat e strumenti. Interfaccia React del planner distinta dal simulatore; aggiungere `/gestione/chat` al frontend condiviso `web/`, già disponibile per macchinetta e supermercato. La chat dei gestori resta da implementare.
+- `planner/`: Node.js/TypeScript con viem per indicizzazione eventi e server HTTP per chat e strumenti. Interfaccia React del planner distinta dal simulatore; aggiungere `/gestione/chat` al frontend condiviso `web/`, già disponibile per macchinetta e supermercato. La chat dei gestori è disponibile in `/gestione/chat`; configurazione e verifiche in `planner/GUIDA.md`.
 - SQLite condiviso tra importazioni e letture, con transazioni e WAL; API degli strumenti incapsulate nel servizio planner. Nessun SQL o codice generato dal modello viene eseguito.
 - Retrieval vettoriale locale QVAC sulle schede e sulle note metodologiche; SQLite conserva metadati e risultati numerici. Seguire RAG_QVAC_DEEPSEEK.md.
 - DeepSeek chiamato soltanto dal server via fetch HTTP. Modello configurabile con `DEEPSEEK_MODEL`, default `deepseek-flash`; chiave `DEEPSEEK_API_KEY` nell'ambiente, mai nel browser o nei documenti condivisi. Endpoint e prezzi da ricontrollare prima dell'avvio.

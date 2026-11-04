@@ -46,7 +46,11 @@ Aggiornamento del 4 novembre 2026:
 | Archivio QVAC ed esempio CLI                                                            | Già presenti e conservati                                                                         |
 | Dataset originali                                                                       | Scaricati; per lo stato dei file seguire [DATA_PIPELINE.md](DATA_PIPELINE.md#stato-verificato)    |
 | Storico blockchain simulato di 180 giorni e 5.000 operazioni | Generatore ed export disponibili; schede RAG e 20 domande di valutazione in [TRANSAZIONI_SIMULATE.md](TRANSAZIONI_SIMULATE.md) |
-| Importazioni delle fonti pubbliche, raccordi geografici più fini e indicizzatore persistente | Da implementare nel modulo del planner |
-| Modello embedding QVAC, retrieval versionato, ranking e chat DeepSeek riservata         | Da implementare e collaudare secondo le specifiche dedicate                                       |
+| Importazioni pubbliche e indicizzatore persistente | Implementati; stato e verifiche in HANDOFF_AI.md |
+| Embedding QVAC, retrieval versionato, ranking e chat | Implementati; restano prove finali della spiegazione delle raccomandazioni, vedi HANDOFF_AI.md |
 
 I risultati dei test del modulo operativo non certificano il planner, il ranking o il RAG. Il confronto degli aggregati con l’indicizzatore del collega resta una verifica di integrazione da eseguire quando sarà disponibile.
+
+## Avanzamento del planner locale
+
+Implementati import demografici e IDISE, raccordi geografici, indicizzatore in sola lettura, ranking, servizio QVAC e chat con sessioni. Il pacchetto history-v1 e il protocollo 3 sono integrati. La chiave è configurata solo localmente: conteggi verificati con DeepSeek reale, spiegazioni delle raccomandazioni ancora da ricollaudare. Per continuare leggere [HANDOFF_AI.md](HANDOFF_AI.md). Comandi e limiti: [guida planner](../planner/GUIDA.md).

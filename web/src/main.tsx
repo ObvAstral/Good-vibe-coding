@@ -697,6 +697,7 @@ function App({ runtime }: { runtime: Config }) {
         )}
         <footer>
           <strong>Una demo di economia solidale.</strong>
+          <p><a href="/gestione/chat">Area gestori · analisi dei quartieri</a></p>
           <p>
             I conferimenti sono simulati. I crediti RCS non sono euro e non sono
             trasferibili tra wallet.
@@ -708,6 +709,11 @@ function App({ runtime }: { runtime: Config }) {
 }
 async function bootstrap() {
   const root = createRoot(document.getElementById("root")!);
+  if (location.pathname === '/gestione/chat') {
+    const { default: Planner } = await import('./Planner.js');
+    root.render(<Planner />);
+    return;
+  }
   try {
     const runtime = await api<Config>("/api/config");
     if (runtime.deployment.protocolVersion !== PROTOCOL_VERSION)

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "need",
+    "content": "Evidenza sintetica di prova: l'indice IDISE misura il disagio socioeconomico relativo delle aree dello stesso comune. Reddito basso, disoccupazione e deprivazione aiutano a descrivere il bisogno sociale. I dati sono riferiti al 2023 e i valori soppressi sono mancanti, non zero.",
+    "queries": ["Come valutiamo il disagio economico di una zona?", "Quale indicatore descrive povertà e redditi bassi?", "Come trattare i valori sociali non pubblicati?"]
+  },
+  {
+    "id": "coverage",
+    "content": "Evidenza sintetica di prova: il gap di copertura è la popolazione divisa per uno più il numero di macchinette attive. Le zone senza punti di raccolta possono essere candidate a installazioni pilota: assenza di osservazioni non significa domanda nulla.",
+    "queries": ["Quali aree hanno pochi punti rispetto ai residenti?", "Possiamo proporre un pilota dove non ci sono macchinette?", "Come si calcola la carenza di copertura territoriale?"]
+  },
+  {
+    "id": "usage",
+    "content": "Evidenza sintetica di prova: l'utilizzo osservato è il numero di conferimenti di bottiglie per giorni di punto abilitato. Si confrontano gli ultimi trenta giorni conclusi con i trenta precedenti per rilevare crescita e calo dell'attività. Lo storico Hardhat è simulato e non dimostra domanda reale.",
+    "queries": ["Come misuriamo quanto vengono usate le macchinette?", "Come verificare se i conferimenti sono diminuiti nel tempo?", "Il numero di bottiglie raccolte prova la domanda reale?"]
+  },
+  {
+    "id": "stores",
+    "content": "Evidenza sintetica di prova: i crediti RCS vengono spesi nei negozi affiliati registrati dal progetto. Le attività alimentari geolocalizzate nei dataset sono partner potenziali, non convenzioni già attive. Se mancano esercizi convenzionati occorre approfondire la rete di spesa.",
+    "queries": ["Dove si possono spendere i crediti RCS?", "I supermercati nel dataset sono già convenzionati?", "Cosa controllare prima di coinvolgere altri negozi?"]
+  },
+  {
+    "id": "geography",
+    "content": "Evidenza sintetica di prova: quartieri, zone statistiche e circoscrizioni sono unità territoriali differenti. Le coordinate dei punti si associano ai confini tramite point-in-polygon. La residenza virtuale non è un'area geografica ed è esclusa dal ranking. I codici 09bis e 17bis conservano i suffissi.",
+    "queries": ["Come assegnare un punto al quartiere corretto?", "La residenza virtuale può ricevere una proposta territoriale?", "Le zone 09bis e 17bis possono essere convertite in numeri interi?"]
+  }
+]

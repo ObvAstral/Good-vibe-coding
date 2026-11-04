@@ -28,7 +28,21 @@
     "fixtures": "tsx --env-file-if-exists=.env scripts/fixtures.ts",
     "wallet:local": "tsx scripts/local-wallet.ts",
     "simulate:history": "npm run compile && tsx scripts/simulate-history.ts",
-    "test:history": "npm run compile && tsx --test tests/history.test.ts"
+    "test:history": "npm run compile && tsx --test tests/history.test.ts",
+    "test:planner": "node --test --test-isolation=none planner/test/*.test.js && tsx --test planner/test/*.test.ts",
+    "planner:probe": "node --env-file-if-exists=.env scripts/planner-rag-probe.js",
+    "analytics:import": "uv run --project analytics --locked python analytics/geography.py",
+    "test:analytics": "uv run --project analytics --locked python -m unittest discover -s analytics -p 'test_*.py'",
+    "test:ai": "npm run test:planner && npm run test:analytics",
+    "analytics:context": "uv run --project analytics --locked python analytics/import_context.py",
+    "planner:points": "uv run --project analytics --locked python analytics/import_points.py",
+    "planner:serve": "tsx --env-file-if-exists=.env planner/src/main.ts serve",
+    "planner:sync": "tsx --env-file-if-exists=.env planner/src/main.ts sync",
+    "planner:index": "tsx --env-file-if-exists=.env planner/src/main.ts index",
+    "planner:user": "tsx --env-file-if-exists=.env planner/src/main.ts user",
+    "test:planner:ui": "node --import tsx planner/test/ui-smoke.ts",
+    "planner:history": "tsx --env-file-if-exists=.env planner/src/main.ts history",
+    "planner:verify-rag": "node --env-file-if-exists=.env --import tsx planner/test/rag-real.ts"
   },
   "dependencies": {
     "@qvac/sdk": "file:vendor/qvac-sdk-0.23.0.tgz"

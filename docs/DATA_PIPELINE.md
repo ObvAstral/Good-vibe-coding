@@ -1,6 +1,40 @@
 # Pipeline dati e raccomandazioni territoriali
 
+## Divisione territoriale aggiornata
+
+Decisione dell'utente del 4 novembre 2026: usare i 23 quartieri riconoscibili
+(Crocetta, Pozzo Strada, San Salvario, ecc.) come divisione pubblica, accettando
+un raccordo approssimato. Questa decisione sostituisce il requisito di contenimento
+esatto delle zone statistiche presente nelle sezioni seguenti.
+
+Ogni zona statistica viene assegnata al quartiere con cui condivide la maggiore
+superficie, calcolata in EPSG:32632 dopo lettura del CRS originale dai PRJ. A parità
+di superficie prevale il codice numerico di quartiere minore. Il report conserva
+quota di sovrapposizione, presenza di attraversamenti e metodo: nessuna zona
+intersecante viene esclusa solo per imperfezioni dei confini.
+
+I dati demografici di quartiere provengono direttamente dal CSV dei quartieri.
+IDISE conserva invece zona statistica, anno e fonte: non viene mediato o ripartito
+per superficie, né presentato come indice ufficiale dell'intero quartiere. Nel
+ranking resta evidenza della sottozona candidata associata al quartiere. La
+residenza virtuale rimane esclusa. Il raccordo ASC usa codici e verifica le
+denominazioni; le eccezioni 1272093 → 09bis e 1272094 → 17bis sono esplicite.
+
+Implementazione attuale: `analytics/geography.py`; rapporto completo in
+`data/processed/planner.geography.json`. Sono importati 23 quartieri, 94 zone e 89
+IDISE pubblicati; cinque IDISE mancanti restano null. Il totale comunale e la
+sezione fittizia dell'Excel IDISE non entrano nelle osservazioni territoriali.
+
 ## Stato verificato
+
+Integrazione protocollo 3: utilizzo e copertura vengono calcolati sul quartiere
+esplicito degli eventi, senza copiarli nelle zone statistiche prive di coordinate.
+Il ranking usa un candidato per quartiere: copertura dalla popolazione di quartiere,
+utilizzo dai suoi punti e, come evidenza sociale preliminare, la sottozona associata
+con IDISE pubblicato più alto. Tale IDISE resta etichettato come valore di sottozona;
+non è una media né un indice ufficiale di quartiere. Questa regola sostituisce il
+ranking operativo per zona descritto nelle sezioni originarie seguenti e mantiene
+i profili e i pesi di progetto già concordati.
 
 Lo storico Hardhat simulato è disponibile: 180 giorni, 5.000 operazioni, eventi e ricevute, aggregati e schede per il RAG. Seguire [TRANSAZIONI_SIMULATE.md](TRANSAZIONI_SIMULATE.md). Questo export è separato dalle fonti pubbliche e non implementa ancora l’indicizzatore persistente o il ranking.
 

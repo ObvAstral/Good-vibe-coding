@@ -35,7 +35,7 @@ Variabili del futuro `.env.example`, senza valori segreti:
 
 ### Modello di embedding: verifica obbligatoria iniziale
 
-Non è ancora stato selezionato e provato un modello embedding sul worker QVAC installato. Scegliere un GGUF multilingue entro il limite di 1B, verificando compatibilità con il plugin embedding e licenza. Il file scelto, versione, fonte, SHA-256, dimensioni dei vettori ed eventuali prefissi query/documento vanno fissati nel manifest di indicizzazione dopo la prova. Non usare automaticamente il modello Llama dell'esempio chat come embedding, né dichiarare validata una compatibilità non provata.
+Il worker locale ha superato la prova con Qwen3 Embedding 0.6B Q8_0 (Apache-2.0), 1024 dimensioni e pooling last: 15/15 domande di compatibilità. Revisione e SHA-256 sono fissati in `planner/embedding-model.json`; il rapporto riproducibile è in `.data/planner/embedding-probe.json`. Per cambiare modello scegliere un GGUF multilingue entro 1B e verificarne compatibilità e licenza. Il file scelto, versione, fonte, SHA-256, dimensioni dei vettori ed eventuali prefissi query/documento vanno fissati nel manifest di indicizzazione dopo la prova. Non usare automaticamente il modello Llama dell'esempio chat come embedding, né dichiarare validata una compatibilità non provata.
 
 Questa è la prima attività tecnica prima dell'integrazione: import SDK → loadModel embedding → embed su testi italiani → ricerca controllata. La API key DeepSeek non è necessaria per questi controlli. Stesso modello, preprocessing e dimensione vettoriale devono essere usati per documenti e domande. Cambiare modello richiede un nuovo indice.
 
@@ -88,4 +88,4 @@ Non modificare il modello di embedding a ogni richiesta. Caricarlo all'avvio del
 - DeepSeek API: https://api-docs.deepseek.com/
 - Schemi effettivi: dichiarazioni `.d.ts` nel pacchetto SDK 0.23.0 incluso nel repository.
 
-Stato: specifica tecnica; configurazione embedding, pipeline e chat devono ancora essere implementate e collaudate.
+Stato: implementazione locale in `planner/` e `analytics/`, con istruzioni in `planner/GUIDA.md`. I test di generazione usano un provider simulato; la prova con DeepSeek reale richiede la chiave sul server.

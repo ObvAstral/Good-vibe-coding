@@ -1,5 +1,7 @@
 # Documentazione tecnica — Riciclo Solidale
 
+**Per continuare il lavoro AI: [consegna e problemi aperti](HANDOFF_AI.md).**
+
 ## Modulo operativo disponibile — protocollo 3
 
 Aggiornamento del 4 novembre 2026: contratto RCS, backend, pagine del simulatore, deploy Hardhat e fixture sono implementati, con 10 bidoni e 6 supermercati fissi. Quartiere e circoscrizione sono negli eventi; le esportazioni includono aggregati per quartiere. Il cliente firma gratuitamente la spesa; il supermercato invia l’acquisto e paga il gas. Il cambio di contratto richiede un nuovo deploy; i crediti della versione precedente non sono migrati automaticamente.
@@ -10,7 +12,7 @@ Per i colleghi, partire dal [riepilogo di implementazione](IMPLEMENTAZIONE.md#ag
 
 - [Implementazione del modulo operativo](IMPLEMENTAZIONE.md): stack, contratto, wallet, macchinetta, supermercato, API e test.
 
-## Planner, dati e AI — specifiche da implementare
+## Planner, dati e AI — specifiche e integrazione
 
 - [Guida RAG QVAC + DeepSeek](RAG_QVAC_DEEPSEEK.md): punto di ingresso, architettura concordata e integrazione.
 - [Chat interna e AI](AI_E_DATI.md): architettura, strumenti, API, accessi e budget DeepSeek.
@@ -24,8 +26,13 @@ Riferimenti: [OpenZeppelin ERC20](https://docs.openzeppelin.com/contracts/5.x/er
 
 Per il planner seguire le nuove specifiche AI_E_DATI.md e DATA_PIPELINE.md: aggiornano la precedente ipotesi di sola generazione QVAC e analisi per circoscrizione. La demo concordata usa esclusivamente Hardhat locale; non è previsto un deploy su reti esterne.
 
-Scelta aggiornata: QVAC per embedding e ricerca locale, DeepSeek API per generazione. La ricerca solo testuale e QVAC opzionale sono ipotesi superate. Il modello embedding effettivo richiede ancora verifica di compatibilità.
+Scelta aggiornata: QVAC per embedding e ricerca locale, DeepSeek API per generazione. La ricerca solo testuale e QVAC opzionale sono ipotesi superate. Il modello Qwen3 Embedding 0.6B Q8_0 ha superato la prova locale di compatibilità; verifiche del corpus completo e integrazione: guida del planner.
 
 ## Dataset di transazioni simulate
 
 [TRANSAZIONI_SIMULATE.md](TRANSAZIONI_SIMULATE.md): storico Hardhat isolato di 180 giorni e 5.000 operazioni, schede per il RAG, aggregati, formati e comando di rigenerazione.
+
+## Modulo planner locale
+
+- [Guida locale del planner](../planner/GUIDA.md): import, storico del collega, indicizzazione, accessi e chat.
+- [Importazioni pubbliche](../analytics/README.md) e [verifica embedding](../planner/README.md).

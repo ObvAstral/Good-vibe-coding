@@ -111,3 +111,20 @@ Il modulo carica la configurazione di questo progetto; `QVAC_CONFIG_PATH`, se im
 Se npm segnala `ENOTFOUND`, verifica rete e DNS verso `registry.npmjs.org`, quindi ripeti `npm install`. Se `doctor` riesce ma il download del modello fallisce, verifica la connessione e riprova `npm run smoke`.
 
 Documentazione ufficiale: https://docs.qvac.tether.io/sdk/js-ts-sdk/
+
+## Planner AI locale
+
+Il planner usa lo storico del collega senza rigenerarlo. Dati pubblici, indicizzazione
+QVAC, ranking per quartiere e chat riservata sono descritti nella
+[guida del planner](planner/GUIDA.md). Dopo la preparazione dei dati e del modello:
+
+```sh
+npm run planner:history
+npm run planner:index
+npm run planner:user -- nome.gestore
+npm run planner:serve
+```
+
+Con il frontend Vite avviato, aprire `/gestione/chat`. DeepSeek richiede una chiave
+configurata solo sul server; i risultati numerici rimangono disponibili senza chiave.
+I test ordinari non consumano credito DeepSeek: `npm run test:ai`.
