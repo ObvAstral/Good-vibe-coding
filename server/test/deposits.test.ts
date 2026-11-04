@@ -8,7 +8,7 @@ import { startChain } from "../../scripts/local-chain.js";
 import { deployDemo } from "../../scripts/deploy.js";
 import { TerminalService, type ServiceOptions } from "../src/service.js";
 import { createApp } from "../src/app.js";
-import { localAccount } from "@riciclo/shared/local";
+import { localAccount, localOperators } from "@riciclo/shared/local";
 import { tokenAbi } from "@riciclo/shared/abi";
 import {
   getAddress,
@@ -19,6 +19,7 @@ import {
 } from "viem";
 import {
   cartHash,
+  FIXED_POINTS,
   purchaseDomain,
   purchaseTypes,
   buyerAuthorization,
@@ -35,7 +36,7 @@ before(async () => {
     rpcUrl: chain.rpcUrl,
     publicRpcUrl: chain.rpcUrl,
     databasePath: join(directory, "state.sqlite"),
-    operators: [1, 2, 3, 4].map(localAccount),
+    operators: localOperators(),
   };
 });
 after(async () => {
@@ -183,7 +184,15 @@ it("schema, indirizzi, quantità, ID e punti errati vengono rifiutati", async ()
   const missing = await app.inject({ url: `/api/deposits/${randomUUID()}` });
   assert.equal(missing.statusCode, 404);
   const config = (await app.inject({ url: "/api/config" })).json();
-  assert.equal(config.points.length, 4);
+  assert.equal(config.points.length, 16);
+  assert.equal(config.points.filter((p: any) => p.kind === 0).length, 10);
+  assert.equal(config.points.filter((p: any) => p.kind === 1).length, 6);
+  assert.equal(config.points.find((p: any) => p.id === "2").neighborhoodId, 11);
+  assert.equal(
+    config.points.find((p: any) => p.id === "2").neighborhoodName,
+    "Santa Rita",
+  );
+  assert.equal(config.deployment.neighborhoods.length, 23);
   assert(!JSON.stringify(config).includes("privateKey"));
   await app.close();
   await service.close();
@@ -199,6 +208,8 @@ it("preventivo ordinato, firma EIP-712 corretta e carrelli invalidi", async () =
       { productId: "2", quantity: 1 },
     ],
   };
+  const beforeTime = BigInt(Math.floor(Date.now() / 1000));
+  const blockTime = (await chain.client.getBlock()).timestamp;
   const response = await app.inject({
     method: "POST",
     url: "/api/purchase-quotes",
@@ -223,9 +234,14 @@ it("preventivo ordinato, firma EIP-712 corretta e carrelli invalidi", async () =
     signature: q.signature,
   });
   assert.equal(getAddress(signer), localAccount(4).address);
-  assert.equal(
-    BigInt(q.deadline) - (await chain.client.getBlock()).timestamp,
-    300n,
+  const afterTime = BigInt(Math.floor(Date.now() / 1000));
+  assert(
+    BigInt(q.deadline) >=
+      (blockTime > beforeTime ? blockTime : beforeTime) + 300n,
+  );
+  assert(
+    BigInt(q.deadline) <=
+      (blockTime > afterTime ? blockTime : afterTime) + 300n,
   );
   for (const cart of [
     [],
@@ -377,7 +393,7 @@ it("preventivo nuovo valido anche se Hardhat non ha minato per oltre cinque minu
   }
 });
 
-async function authorizedPurchase(service: TerminalService, index = 6) {
+async function authorizedPurchase(service: TerminalService, index = 12) {
   const buyer = localAccount(index);
   const mint = await service.deposit({
     ...input(),
@@ -621,6 +637,100 @@ it("depositi e acquisti condividono le prenotazioni dei nonce dello stesso opera
   } finally {
     service.client.getTransactionCount = original;
     await point(localAccount(1).address);
+    await service.close();
+  }
+});
+
+it("tutti i 10 bidoni e 6 negozi sono operativi e mantengono il quartiere negli eventi", async () => {
+  const service = new TerminalService({
+    ...options,
+    databasePath: join(directory, "all-points.sqlite"),
+  });
+  await service.validateDeployment();
+  const buyer = localAccount(14);
+  await createTestClient({
+    mode: "hardhat",
+    transport: http(chain.rpcUrl),
+  }).setBalance({ address: buyer.address, value: 0n });
+  const contract = {
+    address: options.deployment.contractAddress,
+    abi: tokenAbi,
+  };
+  try {
+    for (const point of FIXED_POINTS.filter((p) => p.kind === 0)) {
+      const sent = await service.deposit({
+        ...input(),
+        recipient: buyer.address,
+        machineId: point.id,
+        bottles: 1,
+      });
+      assert.equal(sent.status, "pending", sent.error);
+      assert(sent.txHash);
+      const receipt = await chain.client.waitForTransactionReceipt({
+        hash: sent.txHash,
+        timeout: 10000,
+      });
+      assert.equal(receipt.status, "success");
+      const logs = await chain.client.getContractEvents({
+        ...contract,
+        eventName: "BottlesDeposited",
+        fromBlock: receipt.blockNumber,
+        toBlock: receipt.blockNumber,
+      });
+      assert.equal(
+        logs.find((log) => log.transactionHash === sent.txHash)?.args
+          .neighborhoodId,
+        point.neighborhoodId,
+      );
+    }
+    for (const point of FIXED_POINTS.filter((p) => p.kind === 1)) {
+      const quote = await service.quote(buyer.address, point.id, [
+        { productId: "1", quantity: 1 },
+      ]);
+      const buyerSignature = await buyer.signTypedData(
+        buyerAuthorization(quote, options.deployment),
+      );
+      const sent = await service.purchase({ quote, buyerSignature });
+      assert.equal(sent.status, "pending", sent.error);
+      assert(sent.txHash);
+      const receipt = await chain.client.waitForTransactionReceipt({
+        hash: sent.txHash,
+        timeout: 10000,
+      });
+      assert.equal(receipt.status, "success");
+      const op = await chain.client.readContract({
+        ...contract,
+        functionName: "getPoint",
+        args: [BigInt(point.id)],
+      });
+      assert.equal(
+        (
+          await chain.client.getTransaction({ hash: sent.txHash })
+        ).from.toLowerCase(),
+        op.operator.toLowerCase(),
+      );
+      const logs = await chain.client.getContractEvents({
+        ...contract,
+        eventName: "PurchaseCompleted",
+        fromBlock: receipt.blockNumber,
+        toBlock: receipt.blockNumber,
+      });
+      assert.equal(
+        logs.find((log) => log.transactionHash === sent.txHash)?.args
+          .neighborhoodId,
+        point.neighborhoodId,
+      );
+    }
+    assert.equal(await chain.client.getBalance({ address: buyer.address }), 0n);
+    assert.equal(
+      await chain.client.readContract({
+        ...contract,
+        functionName: "balanceOf",
+        args: [buyer.address],
+      }),
+      4n,
+    );
+  } finally {
     await service.close();
   }
 });

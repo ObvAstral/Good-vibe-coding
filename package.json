@@ -23,10 +23,12 @@
     "test:e2e": "npm run compile && playwright test",
     "typecheck": "tsc --noEmit",
     "build": "npm run compile && npm run typecheck && npm run build -w @riciclo/web",
-    "test": "npm run test:contracts && npm run test:backend && npm run test:integration",
+    "test": "npm run test:contracts && npm run test:backend && npm run test:integration && npm run test:history",
     "demo:reset": "tsx scripts/reset.ts",
     "fixtures": "tsx --env-file-if-exists=.env scripts/fixtures.ts",
-    "wallet:local": "tsx scripts/local-wallet.ts"
+    "wallet:local": "tsx scripts/local-wallet.ts",
+    "simulate:history": "npm run compile && tsx scripts/simulate-history.ts",
+    "test:history": "npm run compile && tsx --test tests/history.test.ts"
   },
   "dependencies": {
     "@qvac/sdk": "file:vendor/qvac-sdk-0.23.0.tgz"

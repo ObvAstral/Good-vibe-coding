@@ -1,10 +1,10 @@
 # Documentazione tecnica — Riciclo Solidale
 
-## Modulo operativo disponibile — protocollo 2
+## Modulo operativo disponibile — protocollo 3
 
-Aggiornamento del 4 novembre 2026: contratto RCS, backend, pagine del simulatore, deploy Hardhat e fixture sono implementati. Il cliente firma gratuitamente la spesa; il supermercato invia l’acquisto e paga il gas. Il cambio di contratto richiede un nuovo deploy; i crediti della versione precedente non sono migrati automaticamente.
+Aggiornamento del 4 novembre 2026: contratto RCS, backend, pagine del simulatore, deploy Hardhat e fixture sono implementati, con 10 bidoni e 6 supermercati fissi. Quartiere e circoscrizione sono negli eventi; le esportazioni includono aggregati per quartiere. Il cliente firma gratuitamente la spesa; il supermercato invia l’acquisto e paga il gas. Il cambio di contratto richiede un nuovo deploy; i crediti della versione precedente non sono migrati automaticamente.
 
-Per i colleghi, partire dal [riepilogo di implementazione](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-2) e dallo [stato dei lavori](CONSEGNA_AI.md#stato-dei-lavori). Le verifiche automatiche del modulo operativo sono 34; collaudo MetaMask reale e confronto con il planner restano attività di integrazione.
+Per i colleghi, partire dal [riepilogo di implementazione](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-3) e dallo [stato dei lavori](CONSEGNA_AI.md#stato-dei-lavori). Le verifiche automatiche del modulo operativo sono 39; collaudo MetaMask reale e confronto con il planner restano attività di integrazione.
 
 - [Avvio e guida operativa](AVVIO.md): token locale, API, wallet, reset e test su Hardhat.
 
@@ -25,3 +25,7 @@ Riferimenti: [OpenZeppelin ERC20](https://docs.openzeppelin.com/contracts/5.x/er
 Per il planner seguire le nuove specifiche AI_E_DATI.md e DATA_PIPELINE.md: aggiornano la precedente ipotesi di sola generazione QVAC e analisi per circoscrizione. La demo concordata usa esclusivamente Hardhat locale; non è previsto un deploy su reti esterne.
 
 Scelta aggiornata: QVAC per embedding e ricerca locale, DeepSeek API per generazione. La ricerca solo testuale e QVAC opzionale sono ipotesi superate. Il modello embedding effettivo richiede ancora verifica di compatibilità.
+
+## Dataset di transazioni simulate
+
+[TRANSAZIONI_SIMULATE.md](TRANSAZIONI_SIMULATE.md): storico Hardhat isolato di 180 giorni e 5.000 operazioni, schede per il RAG, aggregati, formati e comando di rigenerazione.

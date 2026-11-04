@@ -13,3 +13,17 @@ export function assertLocal(url: string, chainId: number) {
   )
     throw new Error("Le chiavi demo richiedono RPC locale e chainId 31337.");
 }
+
+// The buyer remains account 5. Two machine operators serve the ten fixed machines.
+export const localOperators = () => [1, 2, 3, 4, 6, 7, 8, 9].map(localAccount);
+export const localPointOperators = () => ({
+  machines: [localAccount(1).address, localAccount(2).address] as const,
+  stores: [
+    localAccount(3).address,
+    localAccount(4).address,
+    localAccount(6).address,
+    localAccount(7).address,
+    localAccount(8).address,
+    localAccount(9).address,
+  ] as const,
+});

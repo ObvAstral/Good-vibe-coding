@@ -1,10 +1,10 @@
 # Guida operativa
 
-Versione corrente del modulo operativo: protocollo `2`. Per il riepilogo delle modifiche e le responsabilità dei colleghi leggere [IMPLEMENTAZIONE.md](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-2) e [CONSEGNA_AI.md](CONSEGNA_AI.md#stato-dei-lavori).
+Versione corrente del modulo operativo: protocollo `3`. Per il riepilogo delle modifiche e le responsabilità dei colleghi leggere [IMPLEMENTAZIONE.md](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-3) e [CONSEGNA_AI.md](CONSEGNA_AI.md#stato-dei-lavori).
 
 ## Struttura e configurazione
 
-`contracts/` contiene Solidity, configurazione Hardhat e test. `server/` contiene API e registri SQLite dei depositi e degli acquisti. `web/` contiene le pagine React. `shared/` contiene protocollo EIP-712, tipi e ABI generata dalla compilazione. Il deploy produce un manifest JSON con protocolVersion, ABI, chainId, contractAddress, deploymentBlock, deploymentBlockHash e nomi dimostrativi dei punti.
+`contracts/` contiene Solidity, configurazione Hardhat e test. `server/` contiene API e registri SQLite dei depositi e degli acquisti. `web/` contiene le pagine React. `shared/` contiene protocollo EIP-712, tipi e ABI generata dalla compilazione. Il deploy produce un manifest JSON con protocolVersion, ABI, chainId, contractAddress, deploymentBlock, deploymentBlockHash e nomi dei punti fissi. Include anche `neighborhoods` (catalogo dei 23 quartieri) e `geographySource` con fonte, checksum e flag `fixed_demo_without_coordinates`.
 
 Node e npm di riferimento sono 22.22.2 e 10.9.7. Le versioni esatte delle dipendenze sono nel lockfile; usare `npm ci`. La prima installazione scarica anche i plugin nativi dell’SDK QVAC, ma i test operativi non caricano modelli AI. Il compilatore Solidity 0.8.28 viene scaricato al primo build; l’ABI generata non va modificata a mano.
 
@@ -33,20 +33,32 @@ Con questa configurazione il database è `.data/local.sqlite`. Dopo l’arresto 
 
 ## Account e punti iniziali
 
-| ID  | Punto                  | Tipo    | Circoscrizione | Account locale |
-| --- | ---------------------- | ------- | -------------- | -------------- |
-| 1   | Macchinetta Aurora     | MACHINE | 7              | Hardhat 1      |
-| 2   | Macchinetta Santa Rita | MACHINE | 2              | Hardhat 2      |
-| 3   | Market Aurora          | STORE   | 7              | Hardhat 3      |
-| 4   | Market Santa Rita      | STORE   | 2              | Hardhat 4      |
+| ID  | Punto                           | Tipo    | Quartiere (IDQUART)      | Circoscrizione | Account Hardhat operatore |
+| --- | ------------------------------- | ------- | ------------------------ | -------------- | ------------------------- |
+| 1   | Macchinetta Aurora              | MACHINE | Aurora (7)               | 7              | 1                         |
+| 2   | Macchinetta Santa Rita          | MACHINE | Santa Rita (11)          | 2              | 2                         |
+| 3   | Market Aurora                   | STORE   | Aurora (7)               | 7              | 3                         |
+| 4   | Market Santa Rita               | STORE   | Santa Rita (11)          | 2              | 4                         |
+| 5   | Macchinetta Centro              | MACHINE | Centro (1)               | 1              | 1                         |
+| 6   | Macchinetta San Salvario        | MACHINE | San Salvario (2)         | 8              | 2                         |
+| 7   | Macchinetta San Paolo           | MACHINE | San Paolo (4)            | 3              | 1                         |
+| 8   | Macchinetta San Donato          | MACHINE | San Donato (6)           | 4              | 2                         |
+| 9   | Macchinetta Parella             | MACHINE | Parella (14)             | 4              | 1                         |
+| 10  | Macchinetta Madonna di Campagna | MACHINE | Madonna di Campagna (16) | 5              | 2                         |
+| 11  | Macchinetta Barriera di Milano  | MACHINE | Barriera di Milano (18)  | 6              | 1                         |
+| 12  | Macchinetta Mirafiori Sud       | MACHINE | Mirafiori Sud (23)       | 2              | 2                         |
+| 13  | Market Centro                   | STORE   | Centro (1)               | 1              | 6                         |
+| 14  | Market San Salvario             | STORE   | San Salvario (2)         | 8              | 7                         |
+| 15  | Market Madonna di Campagna      | STORE   | Madonna di Campagna (16) | 5              | 8                         |
+| 16  | Market Barriera di Milano       | STORE   | Barriera di Milano (18)  | 6              | 9                         |
 
 L’account Hardhat 0 è amministratore; il 5 è l’acquirente usato dallo script demo e suggerito per MetaMask. Sono identità pubbliche di sviluppo. Il deploy non pre-emette crediti e non trasferisce ETH: sulla rete locale gli account Hardhat sono già finanziati. Per importare l’acquirente: `npm run wallet:local`. Può essere usato anche un qualsiasi wallet MetaMask con zero ETH: macchinetta e supermercato pagano le rispettive transazioni, il cliente firma soltanto il consenso alla spesa.
 
-I punti sono esempi, non terminali fisici verificati. Le circoscrizioni 7 e 2 consentono di testare emissione e spesa in zone diverse. Il catalogo globale parte da acqua=1, pane=2, prosciutto=4 e tonno=3 RCS. Nessuna gestione di scorte o euro.
+I punti sono esempi, non terminali fisici verificati. Sono 10 bidoni e 6 negozi distribuiti in dieci quartieri e nelle otto circoscrizioni. Non è possibile aggiungerne durante l’esecuzione. I dieci bidoni condividono due operatori; i sei negozi hanno operatori distinti. Il catalogo globale parte da acqua=1, pane=2, prosciutto=4 e tonno=3 RCS. Nessuna gestione di scorte o euro.
 
 ## API
 
-Gli indirizzi sono stringhe Ethereum. Gli ID uint256 e gli interi on-chain nelle risposte sono stringhe decimali. Quantità in ingresso (`bottles` e `quantity`) sono numeri interi da 1 a 100. I body non accettano campi aggiuntivi. Gli errori generali hanno forma `{ "error": { "code": "...", "message": "..." } }`.
+Gli indirizzi sono stringhe Ethereum. Gli ID uint256 e le quantità on-chain nelle risposte sono stringhe decimali; `zoneId` e `neighborhoodId` sono numeri interi. Quantità in ingresso (`bottles` e `quantity`) sono numeri interi da 1 a 100. I body non accettano campi aggiuntivi. Gli errori generali hanno forma `{ "error": { "code": "...", "message": "..." } }`.
 
 ### Deposito
 
@@ -84,7 +96,7 @@ Le richieste diventano confermate soltanto dopo receipt riuscita. La demo usa un
 
 La risposta contiene `buyer`, `storeId`, `productIds`, `quantities`, `maxTotal`, `nonce`, `deadline` e `signature`. Gli articoli sono ordinati per ID; duplicati e carrelli con più di quattro prodotti sono rifiutati. Il totale viene letto dal contratto. La scadenza è `max(timestamp dell’ultimo blocco, ora del server) + 300 secondi`: anche dopo una pausa della rete Hardhat un nuovo preventivo rimane valido cinque minuti. I nonce sono casuali uint256, verificati contro i consumati del buyer.
 
-Il backend firma il preventivo EIP-712 `Purchase`; il wallet dell’utente firma un messaggio distinto `PurchaseAuthorization`, con gli stessi dati del carrello, importo, negozio, nonce e scadenza. Il dominio ha versione `2`. Il supermercato invia e paga la transazione `purchase`, che brucia i crediti dal buyer autorizzante. Il cliente non invia transazioni e non deve possedere ETH. `maxTotal` deve corrispondere esattamente al costo attuale. Dopo una variazione di prezzo, rotazione dell’operatore o scadenza serve un nuovo preventivo. Il dominio vincola firma a rete e contratto. Non è richiesto `approve`.
+Il backend firma il preventivo EIP-712 `Purchase`; il wallet dell’utente firma un messaggio distinto `PurchaseAuthorization`, con gli stessi dati del carrello, importo, negozio, nonce e scadenza. Il dominio ha versione `3`. Il supermercato invia e paga la transazione `purchase`, che brucia i crediti dal buyer autorizzante. Il cliente non invia transazioni e non deve possedere ETH. `maxTotal` deve corrispondere esattamente al costo attuale. Dopo una variazione di prezzo, rotazione dell’operatore o scadenza serve un nuovo preventivo. Il dominio vincola firma a rete e contratto. Non è richiesto `approve`.
 
 ### Acquisto pagato dal supermercato
 
@@ -122,11 +134,11 @@ Tutto il modulo operativo usa la rete Hardhat locale, chainId 31337. Deploy e ba
 
 Modificare il contratto, eseguire `npm test` e `npm run build`, arrestare i servizi e ricreare la demo con `npm run demo:reset` seguito da `npm run dev`. Le modifiche Solidity richiedono un nuovo deploy; le modifiche alle pagine hanno hot reload di Vite. Per ricaricare automaticamente il backend durante lo sviluppo si può usare `npx tsx watch --env-file-if-exists=.env server/src/main.ts` con la rete già avviata.
 
-Per sperimentare con operatori diversi da quelli del seed, impostare `LOCAL_DEMO=0` e le quattro chiavi operatore locali in `.env`, aggiornare i punti tramite l’amministratore e riavviare il backend. Il vincolo a Hardhat locale rimane attivo.
+Per sperimentare con operatori diversi da quelli del seed, impostare `LOCAL_DEMO=0` e le otto chiavi operatore locali in `.env`: `MACHINE_1_PRIVATE_KEY`, `MACHINE_2_PRIVATE_KEY` e `STORE_1_PRIVATE_KEY` fino a `STORE_6_PRIVATE_KEY`. Aggiornare soltanto gli operatori dei punti già esistenti tramite l’amministratore e riavviare il backend. Il vincolo a Hardhat locale rimane attivo.
 
-## Passaggio al contratto con gas del supermercato
+## Passaggio al contratto di protocollo 3
 
-Questa versione cambia la funzione `purchase` e porta il dominio EIP-712 alla versione `2`. Il contratto precedente non supporta gli acquisti inviati dal negozio: serve un nuovo deploy. Il backend rifiuta manifest e contratti precedenti per evitare acquisti incompatibili.
+La versione `3` mantiene gli acquisti con gas del negozio e aggiunge quartieri e punti fissi. Il costruttore riceve `address[2] machineOperators` e `address[6] storeOperators`, inizializza i 16 punti ed emette i relativi `PointRegistered`. Non c’è più `registerPoint`. Le firme degli eventi sono cambiate e il dominio EIP-712 passa a `3`: i contratti delle versioni precedenti richiedono un nuovo deploy. Il backend rifiuta manifest e contratti precedenti per evitare acquisti incompatibili.
 
 Per ricreare la demo locale, arrestare i servizi e usare:
 
@@ -147,7 +159,7 @@ Dopo la demo on-chain:
 npm run fixtures
 ```
 
-Il comando esporta `.data/planner-events.json`: eventi applicativi con metadati RPC, manifest, fonte, periodo e aggregati di riferimento. La fonte è marcata `hardhat_local`; il conferimento fisico resta simulato. Legge fino a `latest`: è uno strumento per produrre fixture, non l’indicizzatore con finestra di conferma e gestione reorg descritto nell’interfaccia del collega.
+Il comando esporta `.data/planner-events.json`: eventi applicativi con metadati RPC, quartiere nell’evento e nome risolto dal catalogo, manifest, fonte, periodo e aggregati di riferimento. `expected.byDayNeighborhood` contiene i totali per giorno/quartiere e `expected.byNeighborhood` quelli dell’intero periodo; rimangono `byDayZone`, `byPoint` e `total`. Il catalogo usa il codice canonico `IDQUART`, corrispondente alla colonna `num_quartiere` del CSV originale, indicata da `geographySource.sourceField`. All’AI passare gli aggregati con nomi, periodo e fonti, mentre i log con wallet restano nel livello di indicizzazione del planner. La fonte è marcata `hardhat_local`; il conferimento fisico resta simulato. Legge fino a `latest`: è uno strumento per produrre fixture, non l’indicizzatore con finestra di conferma e gestione reorg descritto nell’interfaccia del collega.
 
 Non sommare gli eventi ERC20 `Transfer` ai conteggi applicativi. I wallet distinti non identificano persone e la differenza tra emissione e burn di una zona non descrive il saldo dei residenti. Il planner, i dataset e l’analisi AI rimangono indipendenti.
 

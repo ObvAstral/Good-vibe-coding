@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createTestClient, http } from "viem";
-import { localAccount, assertLocal } from "@riciclo/shared/local";
+import {
+  localAccount,
+  localOperators,
+  assertLocal,
+} from "@riciclo/shared/local";
 import { tokenAbi } from "@riciclo/shared/abi";
 import {
   buyerAuthorization,
@@ -31,7 +35,7 @@ it("bottiglie → API → crediti → preventivo → acquisto → eventi planner
       rpcUrl: chain.rpcUrl,
       publicRpcUrl: chain.rpcUrl,
       databasePath: ":memory:",
-      operators: [1, 2, 3, 4].map(localAccount),
+      operators: localOperators(),
     });
     await service.validateDeployment();
     app = createApp(service);
@@ -154,7 +158,32 @@ it("bottiglie → API → crediti → preventivo → acquisto → eventi planner
     );
     const events = await plannerEvents(chain.client, deployment);
     assert.equal(events.length, 2);
+    assert.equal(
+      events.find((e) => e.eventName === "BottlesDeposited")?.args
+        .neighborhoodId,
+      7,
+    );
+    assert.equal(
+      events.find((e) => e.eventName === "PurchaseCompleted")?.args
+        .neighborhoodId,
+      11,
+    );
     const aggregate = aggregateFixture(events);
+    assert.equal(
+      aggregate.byNeighborhood.find((row) => row.neighborhoodId === 7)
+        ?.tokensMinted,
+      "10",
+    );
+    assert.equal(
+      aggregate.byNeighborhood.find((row) => row.neighborhoodId === 11)
+        ?.tokensBurned,
+      "5",
+    );
+    assert.equal(
+      aggregate.byNeighborhood.find((row) => row.neighborhoodId === 11)
+        ?.neighborhoodName,
+      "Santa Rita",
+    );
     assert.deepEqual(aggregate.total, {
       depositCount: "1",
       bottlesCollected: "10",
@@ -204,4 +233,28 @@ it("gli strumenti operativi rifiutano RPC esterni e reti diverse da Hardhat", ()
   );
   assert.throws(() => assertLocal("http://127.0.0.1:8545", 1), /chainId 31337/);
   assert.doesNotThrow(() => assertLocal("http://127.0.0.1:18546", 31337));
+});
+
+it("non ricostruisce quartieri da circoscrizioni e non tratta dati mancanti come zero", () => {
+  const data = JSON.parse(
+    readFileSync(
+      new URL("../fixtures/planner.synthetic.json", import.meta.url),
+      "utf8",
+    ),
+  ) as { events: PlannerEvent[] };
+  const broken = structuredClone(data.events);
+  delete broken[0].args.neighborhoodId;
+  assert.throws(() => aggregateFixture(broken), /senza quartiere/);
+  const unknown = structuredClone(data.events);
+  unknown[0].args.neighborhoodId = 99;
+  assert.throws(() => aggregateFixture(unknown), /Quartiere sconosciuto/);
+  const moved = structuredClone(data.events);
+  moved[2].args.neighborhoodId = 11;
+  assert.throws(() => aggregateFixture(moved), /Quartiere incoerente/);
+  assert.equal(
+    aggregateFixture(data.events).byNeighborhood.some(
+      (row) => row.neighborhoodId === 1,
+    ),
+    false,
+  );
 });

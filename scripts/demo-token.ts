@@ -25,7 +25,7 @@ const rpc = process.env.RPC_URL ?? localRpc,
 assertLocal(rpc, deployment.chainId);
 if (deployment.protocolVersion !== PROTOCOL_VERSION)
   throw new Error(
-    "Serve un nuovo deploy locale del contratto con gas pagato dal supermercato.",
+    "Serve il nuovo deploy di protocollo 3 con punti fissi e quartieri.",
   );
 const client = createPublicClient({ transport: http(rpc) });
 assertLocal(rpc, await client.getChainId());

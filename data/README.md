@@ -10,6 +10,10 @@ python3 scripts/download_datasets.py
 
 Lo script conserva gli originali, verifica archivi ZIP e intestazioni PDF, rifiuta pagine HTML al posto dei CSV e non estrae automaticamente gli archivi. I controlli di formato non equivalgono alla validazione degli schemi e dei contenuti statistici. I file già disponibili e validi vengono riutilizzati.
 
+## Storico blockchain simulato
+
+La cartella [simulated/history-v1](simulated/history-v1/README.md) contiene 5.000 operazioni e 180 giorni di utilizzo fittizio dei punti demo, eseguiti su Hardhat isolato. Le schede `rag-documents.jsonl` sono pronte per l'ingestione; eventi e aggregati servono per query numeriche. Questo export è separato dalle fonti pubbliche in `raw/`. Formati, limiti e riproduzione: [TRANSAZIONI_SIMULATE.md](../docs/TRANSAZIONI_SIMULATE.md).
+
 ## Selezione
 
 - Popolazione per 23 quartieri e zone statistiche nel 2025, più popolazione per età/circoscrizione e famiglie.

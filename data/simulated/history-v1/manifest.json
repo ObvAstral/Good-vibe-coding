@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "1",
+  "source": "hardhat_local_simulation",
+  "simulated": true,
+  "physicalDepositsSimulated": true,
+  "protocolVersion": "3",
+  "generatedAt": "2026-11-04T13:04:07.914Z",
+  "seed": 314159,
+  "parameters": {
+    "seed": 314159,
+    "start": "2026-05-05",
+    "days": 180,
+    "operations": 5000,
+    "customers": 120
+  },
+  "semanticPlanSha256": "f73b8770af9a08793c5473437c96391248794b30ce9daf38c0d2c91dc271f3e9",
+  "contractBytecodeSha256": "6e88136b4f74a48fb2dccd929358fdca6e4f64909163661780ce770dae156e86",
+  "chainId": 31337,
+  "contractAddress": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+  "deploymentBlock": "1",
+  "deploymentBlockHash": "0xca6e5d593f7ba0f9778763e134128d5b2db786bae370fa5ca0fd19806e97ca2f",
+  "indexedBlock": "5010",
+  "indexedBlockHash": "0x7861bd9840eddde4f615f3f4b3f0979c26a183200e6ee2b82e846b9bd4c59164",
+  "finality": "Snapshot locale isolato, due blocchi minati dopo la fine del periodo; non un indicizzatore persistente.",
+  "period": {
+    "from": "2026-05-05T00:00:00.000Z",
+    "to": "2026-10-31T23:59:59.000Z",
+    "timezone": "UTC"
+  },
+  "counts": {
+    "operationalTransactions": 5000,
+    "setupTransactions": 5,
+    "statusTransactions": 2,
+    "ragDocuments": 95,
+    "evaluationQuestions": 20,
+    "customerWallets": 120
+  },
+  "total": {
+    "depositCount": "2783",
+    "bottlesCollected": "47911",
+    "tokensMinted": "47911",
+    "purchaseCount": "2217",
+    "tokensBurned": "25152",
+    "distinctDepositWallets": "120",
+    "distinctPurchaseWallets": "120"
+  },
+  "finalSupplyRcs": "22759",
+  "verification": {
+    "receiptsSuccessful": true,
+    "normalizedEventsMatchPlan": true,
+    "customerBalancesMatchPlan": true,
+    "customerEthAllZero": true,
+    "supplyEqualsMintedMinusBurned": true,
+    "operatorEthMatchesReceiptGas": true
+  },
+  "operatorGas": [
+    {
+      "role": "machine",
+      "operator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "gasPaidWei": "104544520321652850",
+      "initialEthWei": "10000000000000000000000",
+      "finalEthWei": "9999895455479678347150"
+    },
+    {
+      "role": "machine",
+      "operator": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "gasPaidWei": "79243771894404218",
+      "initialEthWei": "10000000000000000000000",
+      "finalEthWei": "9999920756228105595782"
+    },
+    {
+      "role": "store",
+      "operator": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "gasPaidWei": "50462461120470008",
+      "initialEthWei": "10000000000000000000000",
+      "finalEthWei": "9999949537538879529992"
+    },
+    {
+      "role": "store",
+      "operator": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "gasPaidWei": "33920721353966738",
+      "initialEthWei": "10000000000000000000000",
+      "finalEthWei": "9999966079278646033262"
+    },
+    {
+      "role": "store",
+      "operator": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "gasPaidWei": "24289535111424160",
+      "initialEthWei": "10000000000000000000000",
+      "finalEthWei": "9999975710464888575840"
+    },
+    {
+      "role": "store",
+      "operator": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "gasPaidWei": "28011364904848386",
+      "initialEthWei": "10000000000000000000000",
+      "finalEthWei": "9999971988635095151614"
+    },
+    {
+      "role": "store",
+      "operator": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+      "gasPaidWei": "23567624432754440",
+      "initialEthWei": "10000000000000000000000",
+      "finalEthWei": "9999976432375567245560"
+    },
+    {
+      "role": "store",
+      "operator": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+      "gasPaidWei": "41902726197203778",
+      "initialEthWei": "10000000000000000000000",
+      "finalEthWei": "9999958097273802796222"
+    }
+  ],
+  "scenarios": [
+    "Aurora: peso di utilizzo crescente nel periodo simulato.",
+    "Santa Rita: peso di utilizzo decrescente nel periodo simulato.",
+    "San Salvario: aumento nella seconda metà del periodo simulato.",
+    "Madonna di Campagna: bidone 10 temporaneamente disattivato; negozio 15 sempre attivo.",
+    "I 13 quartieri senza installazioni non hanno osservazioni di utilizzo."
+  ],
+  "checksums": {
+    "deployment.json": "509779fd145973ad5aee6117dfa804b6d9751a53ae53d31e326a1e74f863f16e",
+    "events.jsonl": "958da60c06b78cdf918847ba75a3e9cfdf50b6949f11dd9d78cbd5307355de4d",
+    "transactions.jsonl": "3dd75fd046cd8970f736fbd0114105113b0d2f9239c0599db8ea4ee298110124",
+    "wallets.json": "07f1c468a710635c1da1d1f0771d0082b4e5b99156f119ac6eaf5412e57bc99f",
+    "points.json": "b3d25250e73f045403fb73f359085b2511adfe59ac49aee826c650a8847523c0",
+    "aggregates.json": "845d77a65fb4a654187a03279ef52e336615fa6c924a0a1a20151e25de506ec6",
+    "events.csv": "552e65bb4c4c83601f3e742a1a8216a75e57ba62c7366dbdedba3cff7e9ccc24",
+    "daily-neighborhoods.csv": "459df9ab6b71727c7713d0f3664082e3e2ebe743dc6e4d8a45dc95602d13d2c7",
+    "rag-documents.jsonl": "2e81da5dfc2d15ee37a2e2f9338160f9bf8c0cdc9cd6778d0c7bb44f7c6b3c8c",
+    "rag-corpus.md": "bff0490fd90583b42ffabfa5165dc5981ab1a0657b33e2bfdf81067030d2eb62",
+    "evaluation-questions.json": "2cafd688b43736152aacfafd889852e7994a0c7359040fd0ea45dc18b8c81c20",
+    "README.md": "ca720274230033087e9fba6c38a684f301d6bfbe5cbc62ba56d46d2d3383a45b"
+  }
+}

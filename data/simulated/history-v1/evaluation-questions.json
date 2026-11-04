@@ -1,0 +1,346 @@
+[
+  {
+    "id": "Q01",
+    "question": "Quante operazioni ci sono nello storico?",
+    "expected": {
+      "operations": 5000
+    },
+    "documentIds": [
+      "history-v1:network"
+    ]
+  },
+  {
+    "id": "Q02",
+    "question": "Quante bottiglie sono state raccolte?",
+    "expected": {
+      "bottles": "47911"
+    },
+    "documentIds": [
+      "history-v1:network"
+    ]
+  },
+  {
+    "id": "Q03",
+    "question": "Quanti RCS sono stati emessi?",
+    "expected": {
+      "tokensMinted": "47911"
+    },
+    "documentIds": [
+      "history-v1:network"
+    ]
+  },
+  {
+    "id": "Q04",
+    "question": "Quanti acquisti sono stati completati?",
+    "expected": {
+      "purchases": "2217"
+    },
+    "documentIds": [
+      "history-v1:network"
+    ]
+  },
+  {
+    "id": "Q05",
+    "question": "Quanti RCS sono stati spesi?",
+    "expected": {
+      "tokensBurned": "25152"
+    },
+    "documentIds": [
+      "history-v1:network"
+    ]
+  },
+  {
+    "id": "Q06",
+    "question": "Qual è l'offerta RCS alla fine del periodo?",
+    "expected": {
+      "supply": "22759"
+    },
+    "documentIds": [
+      "history-v1:network"
+    ]
+  },
+  {
+    "id": "Q07",
+    "question": "Quanti wallet distinti hanno conferito bottiglie?",
+    "expected": {
+      "wallets": "120"
+    },
+    "documentIds": [
+      "history-v1:network"
+    ]
+  },
+  {
+    "id": "Q08",
+    "question": "Quanti wallet distinti hanno effettuato acquisti?",
+    "expected": {
+      "wallets": "120"
+    },
+    "documentIds": [
+      "history-v1:network"
+    ]
+  },
+  {
+    "id": "Q09",
+    "question": "Quali sono i totali di Aurora?",
+    "expected": {
+      "neighborhoodId": 7,
+      "neighborhoodName": "Aurora",
+      "depositCount": "489",
+      "bottlesCollected": "8411",
+      "tokensMinted": "8411",
+      "purchaseCount": "552",
+      "tokensBurned": "6319",
+      "distinctDepositWallets": "119",
+      "distinctPurchaseWallets": "120"
+    },
+    "documentIds": [
+      "history-v1:neighborhood:7"
+    ]
+  },
+  {
+    "id": "Q10",
+    "question": "Come varia l'utilizzo di Aurora negli ultimi 30 giorni?",
+    "expected": {
+      "neighborhoodId": 7,
+      "neighborhoodName": "Aurora",
+      "previous": {
+        "from": "2026-09-02",
+        "to": "2026-10-01",
+        "depositCount": "107",
+        "bottlesCollected": "1700",
+        "tokensMinted": "1700",
+        "purchaseCount": "115",
+        "tokensBurned": "1406",
+        "distinctDepositWallets": "70",
+        "distinctPurchaseWallets": "74",
+        "machines": 1,
+        "stores": 1,
+        "activeMachineDays": 30,
+        "activeStoreDays": 30
+      },
+      "latest": {
+        "from": "2026-10-02",
+        "to": "2026-10-31",
+        "depositCount": "111",
+        "bottlesCollected": "2022",
+        "tokensMinted": "2022",
+        "purchaseCount": "99",
+        "tokensBurned": "1040",
+        "distinctDepositWallets": "74",
+        "distinctPurchaseWallets": "58",
+        "machines": 1,
+        "stores": 1,
+        "activeMachineDays": 30,
+        "activeStoreDays": 30
+      },
+      "bottlesChangePct": 18.94,
+      "depositOperationsChangePct": 3.74,
+      "purchaseOperationsChangePct": -13.91
+    },
+    "documentIds": [
+      "history-v1:neighborhood:7:trend"
+    ]
+  },
+  {
+    "id": "Q11",
+    "question": "Quali sono i totali di Santa Rita?",
+    "expected": {
+      "neighborhoodId": 11,
+      "neighborhoodName": "Santa Rita",
+      "depositCount": "343",
+      "bottlesCollected": "6040",
+      "tokensMinted": "6040",
+      "purchaseCount": "372",
+      "tokensBurned": "4237",
+      "distinctDepositWallets": "110",
+      "distinctPurchaseWallets": "114"
+    },
+    "documentIds": [
+      "history-v1:neighborhood:11"
+    ]
+  },
+  {
+    "id": "Q12",
+    "question": "Come varia l'utilizzo di Santa Rita negli ultimi 30 giorni?",
+    "expected": {
+      "neighborhoodId": 11,
+      "neighborhoodName": "Santa Rita",
+      "previous": {
+        "from": "2026-09-02",
+        "to": "2026-10-01",
+        "depositCount": "28",
+        "bottlesCollected": "456",
+        "tokensMinted": "456",
+        "purchaseCount": "31",
+        "tokensBurned": "360",
+        "distinctDepositWallets": "26",
+        "distinctPurchaseWallets": "29",
+        "machines": 1,
+        "stores": 1,
+        "activeMachineDays": 30,
+        "activeStoreDays": 30
+      },
+      "latest": {
+        "from": "2026-10-02",
+        "to": "2026-10-31",
+        "depositCount": "30",
+        "bottlesCollected": "515",
+        "tokensMinted": "515",
+        "purchaseCount": "22",
+        "tokensBurned": "214",
+        "distinctDepositWallets": "28",
+        "distinctPurchaseWallets": "20",
+        "machines": 1,
+        "stores": 1,
+        "activeMachineDays": 30,
+        "activeStoreDays": 30
+      },
+      "bottlesChangePct": 12.94,
+      "depositOperationsChangePct": 7.14,
+      "purchaseOperationsChangePct": -29.03
+    },
+    "documentIds": [
+      "history-v1:neighborhood:11:trend"
+    ]
+  },
+  {
+    "id": "Q13",
+    "question": "Quali sono i totali di San Salvario?",
+    "expected": {
+      "neighborhoodId": 2,
+      "neighborhoodName": "San Salvario",
+      "depositCount": "287",
+      "bottlesCollected": "4924",
+      "tokensMinted": "4924",
+      "purchaseCount": "308",
+      "tokensBurned": "3465",
+      "distinctDepositWallets": "111",
+      "distinctPurchaseWallets": "114"
+    },
+    "documentIds": [
+      "history-v1:neighborhood:2"
+    ]
+  },
+  {
+    "id": "Q14",
+    "question": "Come varia l'utilizzo di San Salvario negli ultimi 30 giorni?",
+    "expected": {
+      "neighborhoodId": 2,
+      "neighborhoodName": "San Salvario",
+      "previous": {
+        "from": "2026-09-02",
+        "to": "2026-10-01",
+        "depositCount": "70",
+        "bottlesCollected": "1156",
+        "tokensMinted": "1156",
+        "purchaseCount": "64",
+        "tokensBurned": "769",
+        "distinctDepositWallets": "56",
+        "distinctPurchaseWallets": "49",
+        "machines": 1,
+        "stores": 1,
+        "activeMachineDays": 30,
+        "activeStoreDays": 30
+      },
+      "latest": {
+        "from": "2026-10-02",
+        "to": "2026-10-31",
+        "depositCount": "91",
+        "bottlesCollected": "1608",
+        "tokensMinted": "1608",
+        "purchaseCount": "94",
+        "tokensBurned": "1108",
+        "distinctDepositWallets": "63",
+        "distinctPurchaseWallets": "66",
+        "machines": 1,
+        "stores": 1,
+        "activeMachineDays": 30,
+        "activeStoreDays": 30
+      },
+      "bottlesChangePct": 39.1,
+      "depositOperationsChangePct": 30,
+      "purchaseOperationsChangePct": 46.88
+    },
+    "documentIds": [
+      "history-v1:neighborhood:2:trend"
+    ]
+  },
+  {
+    "id": "Q15",
+    "question": "Il bidone di Madonna di Campagna è sempre rimasto attivo?",
+    "expected": {
+      "machines": 1,
+      "stores": 1,
+      "activeMachineDays": 153,
+      "activeStoreDays": 180,
+      "controls": [
+        {
+          "pointId": "10",
+          "active": false,
+          "timestamp": "2026-07-25T00:00:00.000Z"
+        },
+        {
+          "pointId": "10",
+          "active": true,
+          "timestamp": "2026-08-21T00:00:00.000Z"
+        }
+      ]
+    },
+    "documentIds": [
+      "history-v1:neighborhood:16"
+    ]
+  },
+  {
+    "id": "Q16",
+    "question": "Quanti quartieri non hanno installazioni?",
+    "expected": {
+      "count": 13
+    },
+    "documentIds": [
+      "history-v1:network"
+    ]
+  },
+  {
+    "id": "Q17",
+    "question": "L'assenza di operazioni a Crocetta dimostra che non c'è domanda?",
+    "expected": {
+      "answer": "No: non ci sono installazioni, la domanda non è misurata."
+    },
+    "documentIds": [
+      "history-v1:neighborhood:3",
+      "history-v1:methodology"
+    ]
+  },
+  {
+    "id": "Q18",
+    "question": "Chi paga il gas dell'acquisto?",
+    "expected": {
+      "payer": "supermercato",
+      "customerEth": "0"
+    },
+    "documentIds": [
+      "history-v1:network",
+      "history-v1:methodology"
+    ]
+  },
+  {
+    "id": "Q19",
+    "question": "Si possono sommare i wallet distinti dei singoli mesi?",
+    "expected": {
+      "answer": "No, occorre deduplicare i wallet nell'intero intervallo."
+    },
+    "documentIds": [
+      "history-v1:methodology"
+    ]
+  },
+  {
+    "id": "Q20",
+    "question": "Quali sono i quartieri più bisognosi e le coordinate per installare nuovi bidoni?",
+    "expected": {
+      "answer": "Non determinabile dai soli eventi: mancano indicatori sociali e coordinate dei punti."
+    },
+    "documentIds": [
+      "history-v1:methodology"
+    ]
+  }
+]

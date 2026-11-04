@@ -1,3 +1,9 @@
+export {
+  NEIGHBORHOODS,
+  GEOGRAPHY_SOURCE,
+  FIXED_POINTS,
+  neighborhoodName,
+} from "./geography.js";
 import {
   encodeAbiParameters,
   keccak256,
@@ -6,7 +12,7 @@ import {
   type Hex,
   type Abi,
 } from "viem";
-export const PROTOCOL_VERSION = "2" as const;
+export const PROTOCOL_VERSION = "3" as const;
 export const purchaseTypes = {
   Purchase: [
     { name: "buyer", type: "address" },
@@ -44,6 +50,14 @@ export interface Deployment {
   deploymentBlockHash: Hash;
   abi: Abi;
   points: { id: string; name: string }[];
+  neighborhoods: readonly { id: number; name: string }[];
+  geographySource: {
+    idField: string;
+    sourceField: string;
+    sourceFile: string;
+    sha256: string;
+    pointAssignments: string;
+  };
 }
 export interface Quote {
   buyer: Address;
@@ -59,6 +73,8 @@ export interface Point {
   id: string;
   kind: number;
   zoneId: number;
+  neighborhoodId: number;
+  neighborhoodName: string;
   operator: Address;
   active: boolean;
   name: string;

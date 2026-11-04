@@ -3,7 +3,7 @@ import { startChain, stopChild } from "./local-chain.js";
 import { deployDemo } from "./deploy.js";
 import { TerminalService } from "../server/src/service.js";
 import { createApp } from "../server/src/app.js";
-import { localAccount } from "@riciclo/shared/local";
+import { localAccount, localOperators } from "@riciclo/shared/local";
 import { projectRoot } from "@riciclo/shared/deployment";
 const chain = await startChain(18547);
 const deployment = await deployDemo(chain.rpcUrl);
@@ -12,7 +12,7 @@ const service = new TerminalService({
   rpcUrl: chain.rpcUrl,
   publicRpcUrl: chain.rpcUrl,
   databasePath: ":memory:",
-  operators: [1, 2, 3, 4].map(localAccount),
+  operators: localOperators(),
 });
 await service.validateDeployment();
 const app = createApp(service);

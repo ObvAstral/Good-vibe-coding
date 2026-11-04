@@ -11,7 +11,7 @@ export async function stopChild(child: ChildProcess) {
   await stopped;
   clearTimeout(timer);
 }
-export async function startChain(port: number) {
+export async function startChain(port: number, options: { initialDate?: string } = {}) {
   const rpcUrl = `http://127.0.0.1:${port}`;
   const client = createPublicClient({
     transport: http(rpcUrl, { timeout: 500, retryCount: 0 }),
@@ -29,13 +29,21 @@ export async function startChain(port: number) {
     process.execPath,
     [
       `${projectRoot}/node_modules/hardhat/dist/src/cli.js`,
+      ...(options.initialDate ? ["--network", "hardhatMainnet"] : []),
       "node",
       "--hostname",
       "127.0.0.1",
       "--port",
       String(port),
     ],
-    { cwd: `${projectRoot}/contracts`, stdio: ["ignore", "pipe", "pipe"] },
+    {
+      cwd: `${projectRoot}/contracts`,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        ...(options.initialDate ? { HISTORY_INITIAL_DATE: options.initialDate } : {}),
+      },
+    },
   );
   let output = "";
   child.stdout?.on("data", (data) => {

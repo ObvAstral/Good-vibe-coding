@@ -41,6 +41,8 @@ Questa è la prima attività tecnica prima dell'integrazione: import SDK → loa
 
 ## Preparazione e aggiornamento della conoscenza
 
+Per iniziare con lo storico è già disponibile [l’export simulato](TRANSAZIONI_SIMULATE.md): `data/simulated/history-v1/rag-documents.jsonl` contiene schede senza wallet, con testo, fonte simulata, ID, versione, periodo e hash. Usarlo come input da incorporare, conservando gli ID effettivi restituiti da QVAC. `aggregates.json` e `events.jsonl` servono alle query strutturate; `evaluation-questions.json` resta fuori dall’indice ed è destinato ai test. Non è ancora un indice QVAC attivo e non sostituisce le schede delle fonti pubbliche.
+
 Generare schede sintetiche per quartiere/zona statistica e periodo, separate dalle note metodologiche. Ogni scheda contiene indicatori già calcolati, anno delle fonti, periodo blockchain, unità territoriale, dati mancanti e flag di simulazione. Non incorporare wallet, chiavi o istruzioni operative nei documenti.
 
 La top 3 e i conteggi provengono dalle query sul database completo: i vicini vettoriali non sono la graduatoria delle zone più adatte.

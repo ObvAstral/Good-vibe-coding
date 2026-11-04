@@ -7,9 +7,21 @@ import {
   http,
   type Hash,
 } from "viem";
-import { json, PROTOCOL_VERSION, type Deployment } from "@riciclo/shared";
+import {
+  json,
+  PROTOCOL_VERSION,
+  FIXED_POINTS,
+  NEIGHBORHOODS,
+  GEOGRAPHY_SOURCE,
+  type Deployment,
+} from "@riciclo/shared";
 import { tokenAbi } from "@riciclo/shared/abi";
-import { localAccount, localRpc, assertLocal } from "@riciclo/shared/local";
+import {
+  localAccount,
+  localPointOperators,
+  localRpc,
+  assertLocal,
+} from "@riciclo/shared/local";
 import { projectRoot, readArtifact } from "@riciclo/shared/deployment";
 
 export async function deployDemo(rpcUrl = localRpc): Promise<Deployment> {
@@ -23,15 +35,16 @@ export async function deployDemo(rpcUrl = localRpc): Promise<Deployment> {
     nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
     rpcUrls: { default: { http: [rpcUrl] } },
   });
-  const accounts = Array.from({ length: 5 }, (_, index) => localAccount(index));
+  const operators = localPointOperators();
   const wallet = createWalletClient({
     chain,
     transport: http(rpcUrl),
-    account: accounts[0],
+    account: localAccount(0),
   });
   const hash = await wallet.deployContract({
     abi: tokenAbi,
     bytecode: readArtifact().bytecode,
+    args: [operators.machines, operators.stores],
   });
   const receipt = await client.waitForTransactionReceipt({ hash });
   if (receipt.status !== "success" || !receipt.contractAddress)
@@ -41,27 +54,7 @@ export async function deployDemo(rpcUrl = localRpc): Promise<Deployment> {
     if ((await client.waitForTransactionReceipt({ hash })).status !== "success")
       throw new Error("Seed fallito.");
   }
-  const points = [
-    { id: "1", name: "Macchinetta Aurora" },
-    { id: "2", name: "Macchinetta Santa Rita" },
-    { id: "3", name: "Market Aurora" },
-    { id: "4", name: "Market Santa Rita" },
-  ];
-  // Circoscrizioni 7 (Aurora) e 2 (Santa Rita): metadati dimostrativi.
-  for (let i = 0; i < points.length; i++)
-    await confirm(
-      await wallet.writeContract({
-        address,
-        abi: tokenAbi,
-        functionName: "registerPoint",
-        args: [
-          BigInt(i + 1),
-          i < 2 ? 0 : 1,
-          i % 2 === 0 ? 7 : 2,
-          accounts[i + 1].address,
-        ],
-      }),
-    );
+  const points = FIXED_POINTS.map(({ id, name }) => ({ id, name }));
   for (const [id, name, price] of [
     [1n, "Acqua", 1n],
     [2n, "Pane", 2n],
@@ -78,6 +71,8 @@ export async function deployDemo(rpcUrl = localRpc): Promise<Deployment> {
     );
   return {
     protocolVersion: PROTOCOL_VERSION,
+    neighborhoods: NEIGHBORHOODS,
+    geographySource: GEOGRAPHY_SOURCE,
     chainId,
     contractAddress: address,
     deploymentBlock: receipt.blockNumber.toString(),

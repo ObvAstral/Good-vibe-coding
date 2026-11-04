@@ -21,6 +21,8 @@ import {
 import { tokenAbi } from "@riciclo/shared/abi";
 import {
   PROTOCOL_VERSION,
+  FIXED_POINTS,
+  neighborhoodName,
   buyerAuthorization,
   cartHash,
   json,
@@ -151,7 +153,7 @@ export class TerminalService {
   async validateDeployment() {
     if (this.options.deployment.protocolVersion !== PROTOCOL_VERSION)
       throw new Error(
-        "Manifest precedente agli acquisti con gas del supermercato: compilare e distribuire il nuovo contratto locale prima di avviare il backend.",
+        "Manifest precedente al protocollo 3 con punti fissi e quartieri: compilare e distribuire il nuovo contratto locale.",
       );
     if ((await this.client.getChainId()) !== this.options.deployment.chainId)
       throw new Error("RPC e manifest hanno chainId differenti.");
@@ -170,12 +172,28 @@ export class TerminalService {
     });
     if (domain[2] !== PROTOCOL_VERSION)
       throw new Error(
-        "Contratto precedente: serve il nuovo deploy locale per gli acquisti con gas del supermercato.",
+        "Contratto precedente: serve il nuovo deploy locale con punti fissi e quartieri.",
       );
     const points = await this.client.readContract({
       ...this.contract,
       functionName: "getPoints",
     });
+    if (
+      points.length !== FIXED_POINTS.length ||
+      FIXED_POINTS.some(
+        (expected) =>
+          !points.some(
+            (p) =>
+              p.id === BigInt(expected.id) &&
+              p.kind === expected.kind &&
+              p.zoneId === expected.zoneId &&
+              p.neighborhoodId === expected.neighborhoodId,
+          ),
+      )
+    )
+      throw new Error(
+        "Punti o quartieri del contratto non corrispondono alla demo fissa: rigenerare il deploy.",
+      );
     for (const p of points.filter((p) => p.active))
       if (!this.account(p.operator))
         throw new Error(`Chiave operatore mancante per il punto ${p.id}.`);
@@ -246,6 +264,7 @@ export class TerminalService {
       rpcUrl: this.options.publicRpcUrl,
       points: points.map((p) => ({
         ...p,
+        neighborhoodName: neighborhoodName(p.neighborhoodId),
         id: p.id.toString(),
         name:
           this.options.deployment.points.find(

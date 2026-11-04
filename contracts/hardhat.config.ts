@@ -12,6 +12,13 @@ export default defineConfig({
   },
   paths: { sources: "./src", tests: { nodejs: "./test" } },
   networks: {
-    hardhatMainnet: { type: "edr-simulated", chainType: "l1", chainId: 31337 },
+    hardhatMainnet: {
+      type: "edr-simulated",
+      chainType: "l1",
+      chainId: 31337,
+      ...(process.env.HISTORY_INITIAL_DATE
+        ? { initialDate: process.env.HISTORY_INITIAL_DATE }
+        : {}),
+    },
   },
 });

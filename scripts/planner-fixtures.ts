@@ -1,6 +1,11 @@
 import type { PublicClient } from "viem";
 import { tokenAbi } from "@riciclo/shared/abi";
-import { json, type Deployment } from "@riciclo/shared";
+import {
+  json,
+  PROTOCOL_VERSION,
+  neighborhoodName,
+  type Deployment,
+} from "@riciclo/shared";
 export interface PlannerEvent {
   eventName: "BottlesDeposited" | "PurchaseCompleted";
   chainId: number;
@@ -10,12 +15,17 @@ export interface PlannerEvent {
   transactionHash: string;
   logIndex: number;
   timestamp: string;
+  neighborhoodName: string;
   args: Record<string, string | number | string[]>;
 }
 export async function plannerEvents(
   client: PublicClient,
   deployment: Deployment,
 ): Promise<PlannerEvent[]> {
+  if (deployment.protocolVersion !== PROTOCOL_VERSION)
+    throw new Error(
+      "Rigenerare manifest e fixture per il protocollo 3 con quartieri.",
+    );
   const logs = await client.getContractEvents({
     address: deployment.contractAddress,
     abi: tokenAbi,
@@ -47,6 +57,7 @@ export async function plannerEvents(
       transactionHash: log.transactionHash,
       logIndex: log.logIndex,
       timestamp: timestamps.get(key)!,
+      neighborhoodName: neighborhoodName(log.args.neighborhoodId!),
       args: JSON.parse(json(log.args)),
     });
   }
@@ -80,13 +91,40 @@ export function aggregateFixture(events: PlannerEvent[]) {
   });
   const daily = new Map<string, Bucket>(),
     points = new Map<string, Bucket>(),
+    dailyNeighborhood = new Map<string, Bucket>(),
+    neighborhoods = new Map<number, Bucket>(),
+    pointNeighborhood = new Map<string, number>(),
     total = empty();
   for (const event of unique.values()) {
+    const areaId = Number(event.args.neighborhoodId);
+    if (!Number.isInteger(areaId))
+      throw new Error(
+        "Evento senza quartiere: non usare fixture o ABI precedenti al protocollo 3.",
+      );
+    neighborhoodName(areaId);
+    const dayNeighborhood = `${event.timestamp.slice(0, 10)}/${areaId}`;
     const dayZone = `${event.timestamp.slice(0, 10)}/${event.args.zoneId}`;
     const pointId = String(event.args.machineId ?? event.args.storeId);
+    if (
+      pointNeighborhood.has(pointId) &&
+      pointNeighborhood.get(pointId) !== areaId
+    )
+      throw new Error(
+        "Quartiere incoerente per lo stesso punto nel deployment.",
+      );
+    pointNeighborhood.set(pointId, areaId);
+    if (!dailyNeighborhood.has(dayNeighborhood))
+      dailyNeighborhood.set(dayNeighborhood, empty());
+    if (!neighborhoods.has(areaId)) neighborhoods.set(areaId, empty());
     if (!daily.has(dayZone)) daily.set(dayZone, empty());
     if (!points.has(pointId)) points.set(pointId, empty());
-    for (const b of [daily.get(dayZone)!, points.get(pointId)!, total]) {
+    for (const b of [
+      daily.get(dayZone)!,
+      points.get(pointId)!,
+      dailyNeighborhood.get(dayNeighborhood)!,
+      neighborhoods.get(areaId)!,
+      total,
+    ]) {
       if (event.eventName === "BottlesDeposited") {
         b.depositCount++;
         b.bottlesCollected += BigInt(String(event.args.bottles));
@@ -108,7 +146,20 @@ export function aggregateFixture(events: PlannerEvent[]) {
     distinctDepositWallets: String(b.depositWallets.size),
     distinctPurchaseWallets: String(b.purchaseWallets.size),
   });
+  const area = (id: number) => ({
+    neighborhoodId: id,
+    neighborhoodName: neighborhoodName(id),
+  });
   return {
+    byDayNeighborhood: [...dailyNeighborhood.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => {
+        const [day, id] = key.split("/");
+        return { day, ...area(Number(id)), ...serial(value) };
+      }),
+    byNeighborhood: [...neighborhoods.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([id, value]) => ({ ...area(id), ...serial(value) })),
     byDayZone: [...daily.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => {
@@ -117,7 +168,11 @@ export function aggregateFixture(events: PlannerEvent[]) {
       }),
     byPoint: [...points.entries()]
       .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([pointId, value]) => ({ pointId, ...serial(value) })),
+      .map(([pointId, value]) => ({
+        pointId,
+        ...area(pointNeighborhood.get(pointId)!),
+        ...serial(value),
+      })),
     total: serial(total),
   };
 }

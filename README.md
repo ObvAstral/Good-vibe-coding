@@ -45,13 +45,21 @@ npm run demo:reset
 npm run dev
 ```
 
-Il nuovo flusso richiede il contratto e il manifest di protocollo `2`; se stai usando la prima versione, ricrea la demo con i comandi sopra. I crediti del vecchio contratto non vengono migrati.
+Il nuovo flusso con quartieri e punti fissi richiede contratto, ABI e manifest di protocollo `3`; se stai usando una versione precedente, ricrea la demo con i comandi sopra. I crediti del vecchio contratto non vengono migrati.
 
 Il reset rimuove soltanto manifest e database della demo locale e richiede che la rete sia arrestata. Anche il planner dovrà ricostruire il proprio indice dopo un reset.
 
 ## Stato e consegna ai colleghi
 
-Il modulo operativo è implementato nel protocollo `2`; l’ultima verifica ha superato 34 test automatici, typecheck e build. Il planner e la chat RAG sono il lavoro successivo, descritto nei documenti dedicati. Riepilogo delle modifiche, interfacce e responsabilità: [implementazione](docs/IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-2) e [consegna AI](docs/CONSEGNA_AI.md#stato-dei-lavori). Il collaudo con l’estensione MetaMask e il confronto con l’indicizzatore del planner restano verifiche manuali/di integrazione.
+La demo ha **10 bidoni e 6 supermercati fissi**, senza funzione di aggiunta, distribuiti in dieci quartieri. Quartiere e circoscrizione sono mostrati sul sito e registrati negli eventi; `npm run fixtures` esporta i dati e gli aggregati per il planner. I codici dei 23 quartieri sono nel catalogo condiviso.
+
+Il modulo operativo è implementato nel protocollo `3`; l’ultima verifica ha superato 39 test automatici, typecheck e build. Il planner e la chat RAG sono il lavoro successivo, descritto nei documenti dedicati. Riepilogo delle modifiche, interfacce e responsabilità: [implementazione](docs/IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-3) e [consegna AI](docs/CONSEGNA_AI.md#stato-dei-lavori). Il collaudo con l’estensione MetaMask e il confronto con l’indicizzatore del planner restano verifiche manuali/di integrazione.
+
+## Storico simulato per il RAG
+
+Sono disponibili **5.000 operazioni in 180 giorni**, eseguite sul contratto in una rete Hardhat isolata, con eventi, ricevute, aggregati territoriali e schede per l'indicizzazione. Tutti i dati di utilizzo sono simulati. Partire da [guida e formati](docs/TRANSAZIONI_SIMULATE.md) e [dataset](data/simulated/history-v1/README.md); per l'embedding usare `rag-documents.jsonl`.
+
+`npm run simulate:history` rigenera lo storico in una nuova cartella; rifiuta output esistenti e non tocca la demo interattiva. I parametri sono documentati nella guida. `npm run test:history` verifica il generatore e l'export. L'indice QVAC e la chat restano da implementare.
 
 ## Verifiche
 

@@ -1,0 +1,200 @@
+{
+  "points": [
+    {
+      "id": "1",
+      "name": "Macchinetta Aurora",
+      "kind": 0,
+      "zoneId": 7,
+      "neighborhoodId": 7,
+      "operatorSlot": 0,
+      "operator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "neighborhoodName": "Aurora"
+    },
+    {
+      "id": "2",
+      "name": "Macchinetta Santa Rita",
+      "kind": 0,
+      "zoneId": 2,
+      "neighborhoodId": 11,
+      "operatorSlot": 1,
+      "operator": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "neighborhoodName": "Santa Rita"
+    },
+    {
+      "id": "3",
+      "name": "Market Aurora",
+      "kind": 1,
+      "zoneId": 7,
+      "neighborhoodId": 7,
+      "operatorSlot": 2,
+      "operator": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "neighborhoodName": "Aurora"
+    },
+    {
+      "id": "4",
+      "name": "Market Santa Rita",
+      "kind": 1,
+      "zoneId": 2,
+      "neighborhoodId": 11,
+      "operatorSlot": 3,
+      "operator": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "neighborhoodName": "Santa Rita"
+    },
+    {
+      "id": "5",
+      "name": "Macchinetta Centro",
+      "kind": 0,
+      "zoneId": 1,
+      "neighborhoodId": 1,
+      "operatorSlot": 0,
+      "operator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "neighborhoodName": "Centro"
+    },
+    {
+      "id": "6",
+      "name": "Macchinetta San Salvario",
+      "kind": 0,
+      "zoneId": 8,
+      "neighborhoodId": 2,
+      "operatorSlot": 1,
+      "operator": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "neighborhoodName": "San Salvario"
+    },
+    {
+      "id": "7",
+      "name": "Macchinetta San Paolo",
+      "kind": 0,
+      "zoneId": 3,
+      "neighborhoodId": 4,
+      "operatorSlot": 0,
+      "operator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "neighborhoodName": "San Paolo"
+    },
+    {
+      "id": "8",
+      "name": "Macchinetta San Donato",
+      "kind": 0,
+      "zoneId": 4,
+      "neighborhoodId": 6,
+      "operatorSlot": 1,
+      "operator": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "neighborhoodName": "San Donato"
+    },
+    {
+      "id": "9",
+      "name": "Macchinetta Parella",
+      "kind": 0,
+      "zoneId": 4,
+      "neighborhoodId": 14,
+      "operatorSlot": 0,
+      "operator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "neighborhoodName": "Parella"
+    },
+    {
+      "id": "10",
+      "name": "Macchinetta Madonna di Campagna",
+      "kind": 0,
+      "zoneId": 5,
+      "neighborhoodId": 16,
+      "operatorSlot": 1,
+      "operator": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "neighborhoodName": "Madonna di Campagna"
+    },
+    {
+      "id": "11",
+      "name": "Macchinetta Barriera di Milano",
+      "kind": 0,
+      "zoneId": 6,
+      "neighborhoodId": 18,
+      "operatorSlot": 0,
+      "operator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "neighborhoodName": "Barriera di Milano"
+    },
+    {
+      "id": "12",
+      "name": "Macchinetta Mirafiori Sud",
+      "kind": 0,
+      "zoneId": 2,
+      "neighborhoodId": 23,
+      "operatorSlot": 1,
+      "operator": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "neighborhoodName": "Mirafiori Sud"
+    },
+    {
+      "id": "13",
+      "name": "Market Centro",
+      "kind": 1,
+      "zoneId": 1,
+      "neighborhoodId": 1,
+      "operatorSlot": 4,
+      "operator": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "neighborhoodName": "Centro"
+    },
+    {
+      "id": "14",
+      "name": "Market San Salvario",
+      "kind": 1,
+      "zoneId": 8,
+      "neighborhoodId": 2,
+      "operatorSlot": 5,
+      "operator": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "neighborhoodName": "San Salvario"
+    },
+    {
+      "id": "15",
+      "name": "Market Madonna di Campagna",
+      "kind": 1,
+      "zoneId": 5,
+      "neighborhoodId": 16,
+      "operatorSlot": 6,
+      "operator": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+      "neighborhoodName": "Madonna di Campagna"
+    },
+    {
+      "id": "16",
+      "name": "Market Barriera di Milano",
+      "kind": 1,
+      "zoneId": 6,
+      "neighborhoodId": 18,
+      "operatorSlot": 7,
+      "operator": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+      "neighborhoodName": "Barriera di Milano"
+    }
+  ],
+  "products": [
+    {
+      "id": "1",
+      "name": "Acqua",
+      "price": "1"
+    },
+    {
+      "id": "2",
+      "name": "Pane",
+      "price": "2"
+    },
+    {
+      "id": "3",
+      "name": "Prosciutto",
+      "price": "4"
+    },
+    {
+      "id": "4",
+      "name": "Tonno",
+      "price": "3"
+    }
+  ],
+  "controls": [
+    {
+      "pointId": "10",
+      "active": false,
+      "timestamp": "2026-07-25T00:00:00.000Z",
+      "transactionHash": "0xbdb4f6bf6daab1795a655442b8411b5b557f7821cf2b2839fd7a34d7537a0fde"
+    },
+    {
+      "pointId": "10",
+      "active": true,
+      "timestamp": "2026-08-21T00:00:00.000Z",
+      "transactionHash": "0xf65d5af3c1235133299fda41faa589c9dad4b3f3f123e6c8165e349bc081156e"
+    }
+  ]
+}

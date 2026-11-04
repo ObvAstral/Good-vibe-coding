@@ -1,6 +1,11 @@
 import { privateKeyToAccount } from "viem/accounts";
 import { readDeployment } from "@riciclo/shared/deployment";
-import { assertLocal, localAccount, localRpc } from "@riciclo/shared/local";
+import {
+  assertLocal,
+  localAccount,
+  localOperators,
+  localRpc,
+} from "@riciclo/shared/local";
 import { TerminalService } from "./service.js";
 import { createApp } from "./app.js";
 const deployment = readDeployment();
@@ -8,12 +13,16 @@ const rpcUrl = process.env.RPC_URL ?? localRpc;
 const local = process.env.LOCAL_DEMO !== "0";
 assertLocal(rpcUrl, deployment.chainId);
 const operators = local
-  ? [1, 2, 3, 4].map(localAccount)
+  ? localOperators()
   : [
       "MACHINE_1_PRIVATE_KEY",
       "MACHINE_2_PRIVATE_KEY",
       "STORE_1_PRIVATE_KEY",
       "STORE_2_PRIVATE_KEY",
+      "STORE_3_PRIVATE_KEY",
+      "STORE_4_PRIVATE_KEY",
+      "STORE_5_PRIVATE_KEY",
+      "STORE_6_PRIVATE_KEY",
     ].map((name) => {
       const key = process.env[name];
       if (!key || !/^0x[0-9a-fA-F]{64}$/.test(key))

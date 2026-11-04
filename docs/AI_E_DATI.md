@@ -6,7 +6,7 @@ Realizzare un modulo indipendente dal simulatore di macchinette e supermercati. 
 
 Concordati: Hardhat locale, storico simulato, top 3 riferita a quartieri con nome, equilibrio tra contesto sociale/copertura e utilizzo, fonti verificabili, accesso riservato. Non serve addestrare un modello predittivo per questa prima versione. Le raccomandazioni sono supporto alla decisione, non previsioni validate della domanda reale.
 
-I dettagli operativi di seguito sono default proposti per iniziare senza ulteriori scelte. In caso di conflitto questa specifica e DATA_PIPELINE.md prevalgono sulle parti precedenti della documentazione relative al planner. Il contratto operativo è implementato nel protocollo `2` e conserva gli eventi concordati in INTERFACCIA_PLANNER.md. Il gas dell’acquisto è pagato dal supermercato; il cliente firma il consenso senza inviare transazioni. Per stato, API e nuovo deploy seguire [IMPLEMENTAZIONE.md](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-2).
+I dettagli operativi di seguito sono default proposti per iniziare senza ulteriori scelte. In caso di conflitto questa specifica e DATA_PIPELINE.md prevalgono sulle parti precedenti della documentazione relative al planner. Il contratto operativo è implementato nel protocollo `3` e aggiunge il quartiere agli eventi territoriali descritti in INTERFACCIA_PLANNER.md. La demo contiene 10 bidoni e 6 negozi fissi, senza registrazione di nuovi punti. Il gas dell’acquisto è pagato dal supermercato; il cliente firma il consenso senza inviare transazioni. Per stato, API e nuovo deploy seguire [IMPLEMENTAZIONE.md](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-3).
 
 ## Componenti
 

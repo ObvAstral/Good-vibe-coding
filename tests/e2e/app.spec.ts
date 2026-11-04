@@ -340,3 +340,41 @@ test("ricaricare la pagina recupera l’acquisto senza una seconda transazione",
     before + 1,
   );
 });
+
+test("10 bidoni e 6 supermercati selezionabili, con quartiere e operatori distinti", async ({
+  page,
+}) => {
+  await wallet(page, 13);
+  await expect(
+    page.getByLabel("Punto di raccolta").locator("option"),
+  ).toHaveCount(10);
+  await page.getByLabel("Punto di raccolta").selectOption("10");
+  await expect(page.locator(".point")).toContainText(
+    "Quartiere Madonna di Campagna",
+  );
+  await deposit(page, 10);
+  await store(page);
+  await expect(
+    page.getByLabel("Negozio aderente").locator("option"),
+  ).toHaveCount(6);
+  await page.getByLabel("Negozio aderente").selectOption("16");
+  await expect(page.locator(".point")).toContainText(
+    "Quartiere Barriera di Milano",
+  );
+  await expect(page.locator(".point")).toContainText("Circoscrizione 6");
+  await page.getByLabel("Quantità Pane").fill("1");
+  await page.getByRole("button", { name: "Richiedi preventivo" }).click();
+  await expect(page.getByText("Totale confermato: 2 RCS")).toBeVisible();
+  await page.getByRole("button", { name: "Conferma acquisto" }).click();
+  await expect(page.getByRole("status")).toContainText("Acquisto confermato");
+  await expect(page.getByTestId("balance")).toHaveText("8 RCS");
+  const hash = await page.getByTestId("tx-hash").textContent();
+  const client = createPublicClient({
+    transport: http("http://127.0.0.1:18547"),
+  });
+  expect(
+    (
+      await client.getTransaction({ hash: hash as `0x${string}` })
+    ).from.toLowerCase(),
+  ).toBe(localAccount(9).address.toLowerCase());
+});

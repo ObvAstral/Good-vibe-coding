@@ -2,6 +2,8 @@
 
 ## Stato verificato
 
+Lo storico Hardhat simulato è disponibile: 180 giorni, 5.000 operazioni, eventi e ricevute, aggregati e schede per il RAG. Seguire [TRANSAZIONI_SIMULATE.md](TRANSAZIONI_SIMULATE.md). Questo export è separato dalle fonti pubbliche e non implementa ancora l’indicizzatore persistente o il ranking.
+
 Tutti i 17 file originali del manifest sono disponibili in `data/raw/`: checksum confrontati, ZIP verificati con CRC, PDF leggibili e CSV parsabili. Il precedente `data/VERIFICA.md` descrive il tentativo a 11/17 ed è storico, non lo stato attuale. Lo ZIP IDISE contiene Torino e i fogli ASC_2023, ADU_2023 e ADU_SEZ; la copia estratta è in `data/extracted/001272_Torino/`.
 
 Confini: 23 quartieri (IDQUART), 94 zone statistiche (ZONASTAT), 8 circoscrizioni (NCIRCO). I codici dei quartieri coincidono con la popolazione annuale; quelli delle zone statistiche coincidono dopo normalizzazione degli zeri iniziali, preservando i suffissi `09bis` e `17bis`. Non convertire tutti i codici in interi.
@@ -23,15 +25,15 @@ Non confrontare direttamente IDISE 2021 e 2023: il riferimento comunale cambia. 
 
 ## Registro dei punti e blockchain
 
-Usare gli eventi già definiti in INTERFACCIA_PLANNER.md, via RPC Hardhat. Un solo nodo RPC basta per leggere la stessa catena. Il manifest `deployments/local.json` espone il protocollo `2`, rete, contratto, ABI, blocco e hash iniziali; è generato dal deploy del modulo già implementato. Vedi [IMPLEMENTAZIONE.md](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-2) per la consegna operativa.
+Usare gli eventi già definiti in INTERFACCIA_PLANNER.md, via RPC Hardhat. Un solo nodo RPC basta per leggere la stessa catena. Il manifest `deployments/local.json` espone il protocollo `3`, rete, contratto, ABI, blocco e hash iniziali; è generato dal deploy del modulo già implementato. Vedi [IMPLEMENTAZIONE.md](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-3) per la consegna operativa.
 
-Nel protocollo `2` il cliente autorizza l’acquisto con una firma, mentre il supermercato invia la transazione e paga il gas. Per i distinti e le analisi usare il campo `buyer` di `PurchaseCompleted`: `transaction.from` identifica il negozio. Le firme degli eventi non cambiano.
+Nel protocollo `3` il cliente autorizza l’acquisto con una firma, mentre il supermercato invia la transazione e paga il gas. Per i distinti e le analisi usare il campo `buyer` di `PurchaseCompleted`: `transaction.from` identifica il negozio. Gli eventi territoriali aggiungono `neighborhoodId`; usare l’ABI del nuovo deploy.
 
-Il registro aggiunge a ogni pointId coordinate verificate e posizione versionata per deployment; ricavare quartiere e zona statistica con point-in-polygon. Il codice di circoscrizione dell'evento non consente da solo di assegnare il quartiere. Se un punto si sposta, creare un nuovo ID come già previsto dal contratto. Per coordinate mancanti conservare le operazioni nei totali, escludendole dalle analisi di quartiere.
+La demo definisce nel costruttore 10 bidoni e 6 negozi, senza possibilità di aggiungerne. Il loro quartiere è già registrato on-chain come `neighborhoodId` del catalogo IDQUART; la circoscrizione rimane `zoneId`. Le assegnazioni sono simulate e prive di coordinate: non serve point-in-polygon per aggregare questi eventi per quartiere. Un’eventuale associazione futura alle zone statistiche richiede coordinate o un raccordo verificato e versionato; i conteggi di quartiere non vanno copiati in ciascuna zona statistica.
 
 Indicizzazione: deduplicare log con chainId/contractAddress/transactionHash/logIndex, salvare blockHash e timestamp UTC, gestire rollback come nella specifica precedente. Sulla rete locale la soglia di due blocchi può ritardare l'ultima operazione: rendere visibile il ritardo e prevedere il mining dei blocchi aggiuntivi negli script demo. Un reset Hardhat invalida l'indice del deployment precedente.
 
-Aggregare per punto, zona e giorno UTC: conferimenti, bottiglie, token emessi, acquisti, token bruciati, wallet distinti. I distinti di finestre diverse si ricalcolano dai log, non si sommano. Normalizzare l'utilizzo per giorni di punto abilitato; non chiamarli giorni di effettivo funzionamento senza telemetria hardware. Non interpretare emissioni meno burn in un quartiere come saldo dei residenti.
+Aggregare per punto, quartiere e giorno UTC, mantenendo anche le circoscrizioni: conferimenti, bottiglie, token emessi, acquisti, token bruciati, wallet distinti. I distinti di finestre diverse si ricalcolano dai log, non si sommano. Normalizzare l'utilizzo per giorni di punto abilitato; non chiamarli giorni di effettivo funzionamento senza telemetria hardware. Non interpretare emissioni meno burn in un quartiere come saldo dei residenti.
 
 ## Metodo di ranking iniziale
 

@@ -517,7 +517,8 @@ function App({ runtime }: { runtime: Config }) {
             >
               {(page === "machine" ? machines : stores).map((p) => (
                 <option value={p.id} key={p.id}>
-                  {p.name} · Circoscrizione {p.zoneId}
+                  {p.name} · Quartiere {p.neighborhoodName} · Circoscrizione{" "}
+                  {p.zoneId}
                 </option>
               ))}
             </select>
@@ -525,7 +526,10 @@ function App({ runtime }: { runtime: Config }) {
           {selected ? (
             <p className="point">
               ● {selected.name}{" "}
-              <span>Torino · Circoscrizione {selected.zoneId}</span>
+              <span>
+                Torino · Quartiere {selected.neighborhoodName} · Circoscrizione{" "}
+                {selected.zoneId}
+              </span>
             </p>
           ) : (
             <p className="warning">
@@ -700,7 +704,7 @@ async function bootstrap() {
     const runtime = await api<Config>("/api/config");
     if (runtime.deployment.protocolVersion !== PROTOCOL_VERSION)
       throw new Error(
-        "La demo richiede il nuovo contratto locale con le commissioni pagate dal supermercato.",
+        "La demo richiede il contratto di protocollo 3 con punti fissi e quartieri.",
       );
     const chain = defineChain({
       id: runtime.deployment.chainId,
