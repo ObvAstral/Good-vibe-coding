@@ -1,0 +1,5 @@
+node_modules/
+.env
+.qvac/
+*.log
+.DS_Store

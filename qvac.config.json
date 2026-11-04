@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    "@qvac/sdk/llamacpp-completion/plugin"
+  ],
+  "loggerConsoleOutput": false,
+  "rpcInitTimeoutMs": 120000,
+  "httpConnectionTimeoutMs": 15000,
+  "httpDownloadConcurrency": 3
+}
