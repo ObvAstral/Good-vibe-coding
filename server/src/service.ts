@@ -375,7 +375,12 @@ export class TerminalService {
         args: [address, nonce],
       })
     );
-    const deadline = (await this.client.getBlock()).timestamp + 300n;
+    // Hardhat mines on demand: the latest block can be older than wall time.
+    const blockTimestamp = (await this.client.getBlock()).timestamp;
+    const serverTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const issuedAt =
+      blockTimestamp > serverTimestamp ? blockTimestamp : serverTimestamp;
+    const deadline = issuedAt + 300n;
     const signature = await account.signTypedData({
       domain: purchaseDomain(
         this.options.deployment.chainId,

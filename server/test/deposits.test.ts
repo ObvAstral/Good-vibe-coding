@@ -335,3 +335,35 @@ it("riavvio prima del broadcast: invia esattamente la transazione già salvata",
   );
   await service.close();
 });
+
+it("preventivo nuovo valido anche se Hardhat non ha minato per oltre cinque minuti", async (t) => {
+  const service = new TerminalService({ ...options, databasePath: ":memory:" });
+  const block = await chain.client.getBlock();
+  const wallTime = block.timestamp + 600n;
+  t.mock.method(Date, "now", () => Number(wallTime) * 1000);
+  try {
+    const quote = await service.quote(localAccount(5).address, "4", [
+      { productId: "1", quantity: 1 },
+    ]);
+    assert.equal(BigInt(quote.deadline), wallTime + 300n);
+    assert(BigInt(quote.deadline) > BigInt(Math.floor(Date.now() / 1000)));
+    await chain.client.simulateContract({
+      address: options.deployment.contractAddress,
+      abi: tokenAbi,
+      account: localAccount(5),
+      functionName: "purchase",
+      args: [
+        4n,
+        [1n],
+        [1n],
+        1n,
+        BigInt(quote.nonce),
+        BigInt(quote.deadline),
+        quote.signature,
+      ],
+    });
+  } finally {
+    t.mock.restoreAll();
+    await service.close();
+  }
+});

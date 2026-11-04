@@ -80,7 +80,7 @@ Le richieste diventano confermate soltanto dopo receipt riuscita. La demo usa un
 }
 ```
 
-La risposta contiene `buyer`, `storeId`, `productIds`, `quantities`, `maxTotal`, `nonce`, `deadline` e `signature`. Gli articoli sono ordinati per ID; duplicati e carrelli con più di quattro prodotti sono rifiutati. Il totale viene letto dal contratto. La scadenza è il timestamp dell’ultimo blocco più 300 secondi e i nonce sono casuali uint256, verificati contro i consumati del buyer.
+La risposta contiene `buyer`, `storeId`, `productIds`, `quantities`, `maxTotal`, `nonce`, `deadline` e `signature`. Gli articoli sono ordinati per ID; duplicati e carrelli con più di quattro prodotti sono rifiutati. Il totale viene letto dal contratto. La scadenza è `max(timestamp dell’ultimo blocco, ora del server) + 300 secondi`: anche dopo una pausa della rete Hardhat un nuovo preventivo rimane valido cinque minuti. I nonce sono casuali uint256, verificati contro i consumati del buyer.
 
 Il backend firma l’autorizzazione EIP-712 del negozio; il wallet dell’utente firma e invia la transazione `purchase`. `maxTotal` deve corrispondere esattamente al costo attuale. Dopo una variazione di prezzo, rotazione dell’operatore o scadenza serve un nuovo preventivo. Il dominio vincola firma a rete e contratto. Non è richiesto `approve`.
 
