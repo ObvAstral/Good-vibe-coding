@@ -12,17 +12,19 @@ import {
   useConnect,
   useConnection,
   useDisconnect,
-  usePublicClient,
   useReadContract,
   useSwitchChain,
-  useWriteContract,
+  useSignTypedData,
   useBalance,
 } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { defineChain, formatEther, type Address } from "viem";
 import { tokenAbi } from "@riciclo/shared/abi";
 import {
-  purchaseArgs,
+  buyerAuthorization,
+  PROTOCOL_VERSION,
+  type PurchaseInput,
+  type PurchaseResult,
   type Deployment,
   type Point,
   type Quote,
@@ -45,8 +47,7 @@ function App({ runtime }: { runtime: Config }) {
   const connect = useConnect(),
     disconnect = useDisconnect(),
     switchChain = useSwitchChain(),
-    write = useWriteContract();
-  const client = usePublicClient({ chainId: runtime.deployment.chainId })!;
+    sign = useSignTypedData();
   const query = useQueryClient();
   const contract = {
     address: runtime.deployment.contractAddress,
@@ -86,10 +87,15 @@ function App({ runtime }: { runtime: Config }) {
     [hash, setHash] = useState<string | null>(null),
     [pending, setPending] = useState<Pending | null>(null),
     [now, setNow] = useState(Date.now());
+  const [pendingPurchase, setPendingPurchase] = useState<PurchaseInput | null>(
+    null,
+  );
+  const processing = busy || !!pendingPurchase;
   const action = useRef(false);
   const storageKey = address
     ? `riciclo:${runtime.deployment.chainId}:${runtime.deployment.contractAddress}:${runtime.deployment.deploymentBlockHash}:${address.toLowerCase()}`
     : null;
+  const purchaseStorageKey = storageKey ? `${storageKey}:purchase` : null;
   const context = `${address}:${chainId}:${storeId}:${JSON.stringify(cart)}`;
   const contextRef = useRef(context);
   contextRef.current = context;
@@ -196,6 +202,75 @@ function App({ runtime }: { runtime: Config }) {
       clearInterval(timer);
     };
   }, [pending, storageKey, query]);
+  useEffect(() => {
+    try {
+      setPendingPurchase(
+        purchaseStorageKey
+          ? JSON.parse(sessionStorage.getItem(purchaseStorageKey) ?? "null")
+          : null,
+      );
+    } catch {
+      setPendingPurchase(null);
+    }
+  }, [purchaseStorageKey]);
+  useEffect(() => {
+    if (!pendingPurchase || !purchaseStorageKey) return;
+    let live = true,
+      running = false;
+    const check = async () => {
+      if (running) return;
+      running = true;
+      try {
+        const q = pendingPurchase.quote;
+        let result: PurchaseResult;
+        try {
+          result = await api(`/api/purchases/${q.buyer}/${q.nonce}`);
+        } catch (error) {
+          if (error instanceof HttpError && error.status === 404)
+            result = await api("/api/purchases", pendingPurchase);
+          else throw error;
+        }
+        if (!live) return;
+        setHash(result.txHash);
+        if (result.status === "confirmed" || result.status === "failed") {
+          sessionStorage.removeItem(purchaseStorageKey);
+          setPendingPurchase(null);
+          setQuote(null);
+          if (result.status === "confirmed") {
+            setCart({});
+            setNotice(
+              `Acquisto confermato: ${q.maxTotal} RCS utilizzati. Commissioni pagate dal supermercato.`,
+            );
+            void query.invalidateQueries();
+          } else setNotice(result.error ?? "Acquisto fallito.");
+        } else
+          setNotice(
+            result.error ??
+              "Il supermercato sta completando l’acquisto. Attendo la conferma sulla blockchain…",
+          );
+      } catch (error) {
+        if (live) {
+          setNotice(message(error));
+          if (
+            error instanceof HttpError &&
+            [400, 409, 422].includes(error.status)
+          ) {
+            sessionStorage.removeItem(purchaseStorageKey);
+            setPendingPurchase(null);
+            setQuote(null);
+          }
+        }
+      } finally {
+        running = false;
+      }
+    };
+    void check();
+    const timer = setInterval(() => void check(), 2000);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [pendingPurchase, purchaseStorageKey, query]);
   function navigate(target: "machine" | "store") {
     history.pushState(
       {},
@@ -248,7 +323,7 @@ function App({ runtime }: { runtime: Config }) {
       if (contextRef.current === captured) {
         setQuote(result);
         setNotice(
-          "Preventivo pronto. Controlla il totale e conferma nel wallet.",
+          "Preventivo pronto. Controlla il totale e autorizza la spesa nel wallet.",
         );
       }
     } catch (error) {
@@ -259,41 +334,47 @@ function App({ runtime }: { runtime: Config }) {
     }
   }
   async function purchase() {
-    if (!quote || expired || !address || !ready || action.current) return;
+    if (
+      !quote ||
+      expired ||
+      !address ||
+      !ready ||
+      action.current ||
+      pendingPurchase
+    )
+      return;
     action.current = true;
     setBusy(true);
-    setNotice("Controllo acquisto e conferma nel wallet…");
+    setNotice(
+      "Autorizza nel wallet la spesa dei crediti. Il supermercato pagherà le commissioni.",
+    );
     setHash(null);
     const captured = context;
     try {
-      const args = purchaseArgs(quote);
-      await client.simulateContract({
-        ...contract,
-        functionName: "purchase",
-        args,
-        account: address,
-      });
-      const tx = await write.mutateAsync({
-        ...contract,
-        functionName: "purchase",
-        args,
-        chainId: runtime.deployment.chainId,
-      });
-      setHash(tx);
-      setQuote(null);
-      setNotice("Acquisto inviato. Attendo la conferma sulla blockchain…");
-      const receipt = await client.waitForTransactionReceipt({ hash: tx });
-      if (receipt.status !== "success")
-        throw new Error("Transazione fallita. I crediti non sono stati spesi.");
-      void query.invalidateQueries();
+      const buyerSignature = await sign.mutateAsync(
+        buyerAuthorization(quote, runtime.deployment),
+      );
+      if (contextRef.current !== captured) return;
+      const input: PurchaseInput = { quote, buyerSignature };
+      if (purchaseStorageKey)
+        sessionStorage.setItem(purchaseStorageKey, JSON.stringify(input));
+      setPendingPurchase(input);
+      const result = await api<PurchaseResult>("/api/purchases", input);
       if (contextRef.current === captured) {
-        setCart({});
-        setNotice(`Acquisto confermato: ${quote.maxTotal} RCS utilizzati.`);
+        setHash(result.txHash);
+        setQuote(null);
       }
     } catch (error) {
       if (contextRef.current === captured) {
         setNotice(message(error));
-        if (!/rejected|denied/i.test(String(error))) setQuote(null);
+        if (
+          error instanceof HttpError &&
+          [400, 409, 422].includes(error.status)
+        ) {
+          if (purchaseStorageKey) sessionStorage.removeItem(purchaseStorageKey);
+          setPendingPurchase(null);
+          setQuote(null);
+        }
       }
     } finally {
       setBusy(false);
@@ -351,7 +432,7 @@ function App({ runtime }: { runtime: Config }) {
             {isConnected ? (
               <button
                 className="secondary"
-                disabled={busy}
+                disabled={processing}
                 onClick={() => disconnect.mutate()}
               >
                 Disconnetti
@@ -397,14 +478,14 @@ function App({ runtime }: { runtime: Config }) {
           <button
             className={page === "machine" ? "tab active" : "tab"}
             onClick={() => navigate("machine")}
-            disabled={busy}
+            disabled={processing}
           >
             01 <span>Conferisci bottiglie</span>
           </button>
           <button
             className={page === "store" ? "tab active" : "tab"}
             onClick={() => navigate("store")}
-            disabled={busy}
+            disabled={processing}
           >
             02 <span>Usa i tuoi crediti</span>
           </button>
@@ -427,7 +508,7 @@ function App({ runtime }: { runtime: Config }) {
             {page === "machine" ? "Punto di raccolta" : "Negozio aderente"}
             <select
               value={page === "machine" ? machineId : storeId}
-              disabled={busy || (page === "machine" && !!pending)}
+              disabled={processing || (page === "machine" && !!pending)}
               onChange={(e) =>
                 page === "machine"
                   ? setMachineId(e.target.value)
@@ -463,7 +544,7 @@ function App({ runtime }: { runtime: Config }) {
                     max="100"
                     step="1"
                     value={bottles}
-                    disabled={busy || !!pending}
+                    disabled={processing || !!pending}
                     onChange={(e) =>
                       setBottles(
                         Math.max(
@@ -486,13 +567,13 @@ function App({ runtime }: { runtime: Config }) {
               <button
                 className="full"
                 disabled={
-                  !ready || !selected || bottles < 1 || busy || !!pending
+                  !ready || !selected || bottles < 1 || processing || !!pending
                 }
                 onClick={() => void deposit()}
               >
                 {pending
                   ? "Deposito in attesa…"
-                  : busy
+                  : processing
                     ? "Invio…"
                     : "Conferma conferimento"}
               </button>
@@ -520,7 +601,7 @@ function App({ runtime }: { runtime: Config }) {
                         max="100"
                         step="1"
                         value={cart[p.id.toString()] ?? 0}
-                        disabled={busy}
+                        disabled={processing}
                         onChange={(e) =>
                           setCart({
                             ...cart,
@@ -566,7 +647,7 @@ function App({ runtime }: { runtime: Config }) {
                   disabled={
                     !ready ||
                     !selected ||
-                    busy ||
+                    processing ||
                     items.length === 0 ||
                     items.length > 4 ||
                     balance.data === undefined ||
@@ -578,24 +659,17 @@ function App({ runtime }: { runtime: Config }) {
                 </button>
                 <button
                   disabled={
-                    !ready ||
-                    !selected ||
-                    busy ||
-                    !quote ||
-                    expired ||
-                    eth.data?.value === 0n
+                    !ready || !selected || processing || !quote || expired
                   }
                   onClick={() => void purchase()}
                 >
-                  {busy ? "Operazione in corso…" : "Conferma acquisto"}
+                  {processing ? "Operazione in corso…" : "Conferma acquisto"}
                 </button>
               </div>
-              {eth.data?.value === 0n && ready && (
-                <p className="warning">
-                  Servono ETH di test nel wallet per pagare il gas
-                  dell’acquisto.
-                </p>
-              )}
+              <p className="hint">
+                Il supermercato paga le commissioni dell’acquisto. Tu autorizzi
+                soltanto la spesa dei crediti RCS.
+              </p>
             </>
           )}
         </section>
@@ -624,6 +698,10 @@ async function bootstrap() {
   const root = createRoot(document.getElementById("root")!);
   try {
     const runtime = await api<Config>("/api/config");
+    if (runtime.deployment.protocolVersion !== PROTOCOL_VERSION)
+      throw new Error(
+        "La demo richiede il nuovo contratto locale con le commissioni pagate dal supermercato.",
+      );
     const chain = defineChain({
       id: runtime.deployment.chainId,
       name: "Hardhat locale",

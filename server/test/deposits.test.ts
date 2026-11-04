@@ -10,8 +10,20 @@ import { TerminalService, type ServiceOptions } from "../src/service.js";
 import { createApp } from "../src/app.js";
 import { localAccount } from "@riciclo/shared/local";
 import { tokenAbi } from "@riciclo/shared/abi";
-import { getAddress, recoverTypedDataAddress } from "viem";
-import { cartHash, purchaseDomain, purchaseTypes } from "@riciclo/shared";
+import {
+  getAddress,
+  recoverTypedDataAddress,
+  createTestClient,
+  createWalletClient,
+  http,
+} from "viem";
+import {
+  cartHash,
+  purchaseDomain,
+  purchaseTypes,
+  buyerAuthorization,
+  purchaseArgs,
+} from "@riciclo/shared";
 let chain: Awaited<ReturnType<typeof startChain>>, options: ServiceOptions;
 let directory: string;
 before(async () => {
@@ -350,20 +362,265 @@ it("preventivo nuovo valido anche se Hardhat non ha minato per oltre cinque minu
     await chain.client.simulateContract({
       address: options.deployment.contractAddress,
       abi: tokenAbi,
-      account: localAccount(5),
+      account: localAccount(4),
       functionName: "purchase",
-      args: [
-        4n,
-        [1n],
-        [1n],
-        1n,
-        BigInt(quote.nonce),
-        BigInt(quote.deadline),
-        quote.signature,
-      ],
+      args: purchaseArgs(
+        quote,
+        await localAccount(5).signTypedData(
+          buyerAuthorization(quote, options.deployment),
+        ),
+      ),
     });
   } finally {
     t.mock.restoreAll();
+    await service.close();
+  }
+});
+
+async function authorizedPurchase(service: TerminalService, index = 6) {
+  const buyer = localAccount(index);
+  const mint = await service.deposit({
+    ...input(),
+    recipient: buyer.address,
+    bottles: 10,
+  });
+  await chain.client.waitForTransactionReceipt({ hash: mint.txHash! });
+  const quote = await service.quote(buyer.address, "4", [
+    { productId: "2", quantity: 1 },
+    { productId: "4", quantity: 1 },
+  ]);
+  const buyerSignature = await buyer.signTypedData(
+    buyerAuthorization(quote, options.deployment),
+  );
+  return { quote, buyerSignature };
+}
+it("acquisti concorrenti idempotenti: una sola transazione e gas del negozio", async () => {
+  const databasePath = join(directory, "purchases.sqlite");
+  let service = new TerminalService({ ...options, databasePath });
+  let app = createApp(service);
+  const body = await authorizedPurchase(service);
+  await createTestClient({
+    mode: "hardhat",
+    transport: http(chain.rpcUrl),
+  }).setBalance({ address: body.quote.buyer, value: 0n });
+  const before = await chain.client.getBalance({
+    address: localAccount(4).address,
+  });
+  const replies = await Promise.all(
+    Array.from({ length: 4 }, () =>
+      app.inject({ method: "POST", url: "/api/purchases", payload: body }),
+    ),
+  );
+  for (const response of replies)
+    assert([200, 202].includes(response.statusCode), response.body);
+  const hashes = replies.map((response) => response.json().txHash);
+  assert(hashes[0]);
+  assert.equal(new Set(hashes).size, 1);
+  const receipt = await chain.client.waitForTransactionReceipt({
+    hash: hashes[0],
+  });
+  assert.equal(
+    before -
+      (await chain.client.getBalance({ address: localAccount(4).address })),
+    receipt.gasUsed * receipt.effectiveGasPrice,
+  );
+  assert.equal(
+    await chain.client.getBalance({ address: body.quote.buyer }),
+    0n,
+  );
+  await app.close();
+  await service.close();
+  service = new TerminalService({ ...options, databasePath });
+  app = createApp(service);
+  const replay = await app.inject({
+    method: "POST",
+    url: "/api/purchases",
+    payload: body,
+  });
+  assert.equal(replay.json().status, "confirmed");
+  assert.equal(replay.json().txHash, hashes[0]);
+  const conflict = await app.inject({
+    method: "POST",
+    url: "/api/purchases",
+    payload: { ...body, quote: { ...body.quote, maxTotal: "6" } },
+  });
+  assert.equal(conflict.statusCode, 409);
+  const status = await app.inject({
+    url: `/api/purchases/${body.quote.buyer}/${body.quote.nonce}`,
+  });
+  assert.equal(status.json().status, "confirmed");
+  assert.equal(
+    (
+      service.db.prepare("SELECT COUNT(*) AS n FROM purchases").get() as {
+        n: number;
+      }
+    ).n,
+    1,
+  );
+  await app.close();
+  await service.close();
+});
+it("nessuna spesa del negozio con firma buyer mancante, falsa o carrello alterato", async () => {
+  const service = new TerminalService({
+      ...options,
+      databasePath: join(directory, "purchase-signatures.sqlite"),
+    }),
+    app = createApp(service);
+  const body = await authorizedPurchase(service, 7);
+  const store = localAccount(4).address;
+  const before = await chain.client.getTransactionCount({ address: store });
+  const forged = await localAccount(8).signTypedData(
+    buyerAuthorization(body.quote, options.deployment),
+  );
+  for (const payload of [
+    { quote: body.quote },
+    { ...body, buyerSignature: "0x" },
+    { ...body, buyerSignature: forged },
+    { ...body, quote: { ...body.quote, maxTotal: "1" } },
+  ]) {
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/purchases",
+      payload,
+    });
+    assert([400, 422].includes(response.statusCode), response.body);
+  }
+  assert.equal(
+    (
+      service.db.prepare("SELECT COUNT(*) AS n FROM purchases").get() as {
+        n: number;
+      }
+    ).n,
+    0,
+  );
+  assert.equal(
+    await chain.client.getTransactionCount({ address: store }),
+    before,
+  );
+  await app.close();
+  await service.close();
+});
+it("acquisto recuperato dopo un timeout successivo al broadcast senza secondo burn", async () => {
+  const databasePath = join(directory, "purchase-timeout.sqlite");
+  let service = new TerminalService({ ...options, databasePath });
+  const body = await authorizedPurchase(service, 8);
+  const original = service.client.sendRawTransaction;
+  service.client.sendRawTransaction = async (args) => {
+    await original(args);
+    throw new Error("RPC timeout");
+  };
+  const first = await service.purchase(body);
+  assert(first.txHash);
+  assert.equal(first.status, "prepared");
+  const saved = service.db
+    .prepare("SELECT raw_tx,tx_nonce FROM purchases")
+    .get();
+  await service.close();
+  service = new TerminalService({ ...options, databasePath });
+  await service.recover();
+  const recovered = await service.purchase(body);
+  assert.equal(recovered.status, "confirmed");
+  assert.equal(recovered.txHash, first.txHash);
+  assert.deepEqual(
+    service.db.prepare("SELECT raw_tx,tx_nonce FROM purchases").get(),
+    saved,
+  );
+  assert.equal(
+    await chain.client.readContract({
+      address: options.deployment.contractAddress,
+      abi: tokenAbi,
+      functionName: "balanceOf",
+      args: [body.quote.buyer],
+    }),
+    5n,
+  );
+  await service.close();
+});
+it("negozio senza ETH: acquisto in attesa recuperabile dopo il finanziamento", async () => {
+  const service = new TerminalService({
+    ...options,
+    databasePath: join(directory, "store-gas.sqlite"),
+  });
+  const body = await authorizedPurchase(service, 9);
+  const client = createTestClient({
+      mode: "hardhat",
+      transport: http(chain.rpcUrl),
+    }),
+    store = localAccount(4).address;
+  const balance = await chain.client.getBalance({ address: store });
+  try {
+    await client.setBalance({ address: store, value: 0n });
+    const pending = await service.purchase(body);
+    assert.equal(pending.status, "prepared");
+    assert.equal(
+      await chain.client.readContract({
+        address: options.deployment.contractAddress,
+        abi: tokenAbi,
+        functionName: "usedPurchaseNonces",
+        args: [body.quote.buyer, BigInt(body.quote.nonce)],
+      }),
+      false,
+    );
+    await client.setBalance({ address: store, value: balance });
+    await service.recover();
+    const sent = await service.purchase(body);
+    assert(sent.txHash);
+    await chain.client.waitForTransactionReceipt({ hash: sent.txHash });
+    await service.recover();
+    assert.equal((await service.purchase(body)).status, "confirmed");
+  } finally {
+    await client.setBalance({ address: store, value: balance });
+    await service.close();
+  }
+});
+
+it("depositi e acquisti condividono le prenotazioni dei nonce dello stesso operatore", async () => {
+  const service = new TerminalService({
+    ...options,
+    databasePath: join(directory, "shared-operator.sqlite"),
+  });
+  const body = await authorizedPurchase(service, 10),
+    store = localAccount(4),
+    admin = createWalletClient({
+      account: localAccount(0),
+      chain: service.chain,
+      transport: http(chain.rpcUrl),
+    });
+  const point = async (operator: `0x${string}`) => {
+    const hash = await admin.writeContract({
+      address: options.deployment.contractAddress,
+      abi: tokenAbi,
+      functionName: "setPointOperator",
+      args: [1n, operator],
+    });
+    await chain.client.waitForTransactionReceipt({ hash });
+  };
+  await point(store.address);
+  const original = service.client.getTransactionCount;
+  try {
+    const firstNonce = await chain.client.getTransactionCount({
+      address: store.address,
+      blockTag: "pending",
+    });
+    const first = await service.purchase(body);
+    assert(first.txHash);
+    await chain.client.waitForTransactionReceipt({ hash: first.txHash });
+    // An RPC may lag behind the just-mined transaction. The durable reservation wins.
+    service.client.getTransactionCount = async () => firstNonce;
+    const second = await service.deposit({ ...input(), bottles: 1 });
+    assert(second.txHash);
+    await chain.client.waitForTransactionReceipt({ hash: second.txHash });
+    const purchase = service.db
+      .prepare("SELECT tx_nonce FROM purchases")
+      .get() as { tx_nonce: number };
+    const deposit = service.db
+      .prepare("SELECT tx_nonce FROM deposits ORDER BY rowid DESC LIMIT 1")
+      .get() as { tx_nonce: number };
+    assert.equal(purchase.tx_nonce, firstNonce);
+    assert.equal(deposit.tx_nonce, firstNonce + 1);
+  } finally {
+    service.client.getTransactionCount = original;
+    await point(localAccount(1).address);
     await service.close();
   }
 });

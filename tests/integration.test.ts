@@ -2,10 +2,14 @@ import { it } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { createWalletClient, http } from "viem";
+import { createTestClient, http } from "viem";
 import { localAccount, assertLocal } from "@riciclo/shared/local";
 import { tokenAbi } from "@riciclo/shared/abi";
-import { purchaseArgs, type Quote } from "@riciclo/shared";
+import {
+  buyerAuthorization,
+  type PurchaseResult,
+  type Quote,
+} from "@riciclo/shared";
 import { TerminalService } from "../server/src/service.js";
 import { createApp } from "../server/src/app.js";
 import { startChain } from "../scripts/local-chain.js";
@@ -68,20 +72,42 @@ it("bottiglie → API → crediti → preventivo → acquisto → eventi planner
     });
     assert.equal(quoteResponse.statusCode, 200);
     const q = quoteResponse.json<Quote>();
-    const wallet = createWalletClient({
-      account: buyer,
-      chain: service.chain,
+    await createTestClient({
+      mode: "hardhat",
       transport: http(chain.rpcUrl),
-    });
-    const tx = await wallet.writeContract({
-      ...contract,
-      functionName: "purchase",
-      args: purchaseArgs(q),
-    });
-    assert.equal(
-      (await chain.client.waitForTransactionReceipt({ hash: tx })).status,
-      "success",
+    }).setBalance({ address: buyer.address, value: 0n });
+    const store = localAccount(4),
+      storeBefore = await chain.client.getBalance({ address: store.address });
+    const buyerSignature = await buyer.signTypedData(
+      buyerAuthorization(q, deployment),
     );
+    const purchaseBody = { quote: q, buyerSignature };
+    const submitted = await app.inject({
+      method: "POST",
+      url: "/api/purchases",
+      payload: purchaseBody,
+    });
+    assert.equal(submitted.statusCode, 202);
+    const tx = submitted.json<PurchaseResult>().txHash!;
+    const purchaseReceipt = await chain.client.waitForTransactionReceipt({
+      hash: tx,
+    });
+    assert.equal(purchaseReceipt.status, "success");
+    assert.equal(
+      (await chain.client.getTransaction({ hash: tx })).from.toLowerCase(),
+      store.address.toLowerCase(),
+    );
+    assert.equal(await chain.client.getBalance({ address: buyer.address }), 0n);
+    assert.equal(
+      storeBefore - (await chain.client.getBalance({ address: store.address })),
+      purchaseReceipt.gasUsed * purchaseReceipt.effectiveGasPrice,
+    );
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/purchases",
+      payload: purchaseBody,
+    });
+    assert.equal(replay.json<PurchaseResult>().txHash, tx);
     assert.equal(
       await chain.client.readContract({
         ...contract,
@@ -108,15 +134,16 @@ it("bottiglie → API → crediti → preventivo → acquisto → eventi planner
         },
       })
     ).json<Quote>();
-    await assert.rejects(
-      chain.client.simulateContract({
-        ...contract,
-        account: buyer,
-        functionName: "purchase",
-        args: purchaseArgs(expensive),
-      }),
-      /ERC20InsufficientBalance/,
+    const expensiveSignature = await buyer.signTypedData(
+      buyerAuthorization(expensive, deployment),
     );
+    const rejected = await app.inject({
+      method: "POST",
+      url: "/api/purchases",
+      payload: { quote: expensive, buyerSignature: expensiveSignature },
+    });
+    assert.equal(rejected.statusCode, 422);
+    assert.match(rejected.json().error, /Crediti RCS insufficienti/);
     assert.equal(
       await chain.client.readContract({
         ...contract,

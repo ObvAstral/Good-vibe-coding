@@ -1,6 +1,6 @@
 # Riciclo Solidale
 
-Modulo operativo per simulare il riciclo delle bottiglie e la spesa di crediti RCS nei negozi aderenti. Contratto Solidity, backend TypeScript con SQLite e due pagine React collegate allo stesso wallet. L’integrazione QVAC esistente rimane disponibile.
+Modulo operativo per simulare il riciclo delle bottiglie e la spesa di crediti RCS nei negozi aderenti. Contratto Solidity, backend TypeScript con SQLite e due pagine React collegate allo stesso wallet. Macchinetta e supermercato pagano il gas delle operazioni: il cliente può usare un wallet senza ETH e autorizza gli acquisti con una firma. L’integrazione QVAC esistente rimane disponibile.
 
 ## Partire dal token
 
@@ -19,7 +19,7 @@ npm run deploy:local
 npm run demo:token
 ```
 
-La demo emette 10 RCS, acquista pane e tonno bruciando 5 RCS e, su un deployment nuovo, respinge un acquisto da 6 RCS. Non richiede browser, MetaMask o modelli AI. Il deploy genera `deployments/local.json`; `npm run compile` rigenera l’ABI condivisa.
+La demo emette 10 RCS, acquista pane e tonno bruciando 5 RCS e, su un deployment nuovo, respinge un acquisto da 6 RCS. Verifica che il negozio paghi il gas e che gli ETH del cliente restino invariati. Non richiede browser, MetaMask o modelli AI. Il deploy genera `deployments/local.json`; `npm run compile` rigenera l’ABI condivisa.
 
 ## Avviare anche macchinetta e supermercato
 
@@ -36,7 +36,7 @@ Il comando compila, avvia una rete locale nuova, distribuisce e inizializza il c
 - API: http://127.0.0.1:3001/api/config
 - RPC: http://127.0.0.1:8545, chainId **31337**, valuta **ETH**.
 
-Aggiungere questa rete a MetaMask. `npm run wallet:local` mostra l’account pubblico di sviluppo da importare, già dotato di ETH locali. Le sue chiavi sono pubbliche: usarlo esclusivamente sulla rete locale. Il saldo RCS parte da zero; conferire 10 bottiglie e acquistare un pane e un tonno per arrivare a 5 RCS.
+Aggiungere questa rete a MetaMask. `npm run wallet:local` mostra l’account pubblico di sviluppo da importare, già dotato di ETH locali. Le sue chiavi sono pubbliche: usarlo esclusivamente sulla rete locale. Puoi usare anche il tuo wallet senza ETH locali: le commissioni sono pagate dalla macchinetta e dal supermercato. Il saldo RCS parte da zero; conferire 10 bottiglie e acquistare un pane e un tonno per arrivare a 5 RCS. All’acquisto MetaMask chiede una firma di autorizzazione alla spesa dei crediti, senza transazione del cliente.
 
 `Ctrl+C` arresta i servizi. Per creare un nuovo deployment dopo un precedente avvio completo:
 
@@ -45,7 +45,13 @@ npm run demo:reset
 npm run dev
 ```
 
+Il nuovo flusso richiede il contratto e il manifest di protocollo `2`; se stai usando la prima versione, ricrea la demo con i comandi sopra. I crediti del vecchio contratto non vengono migrati.
+
 Il reset rimuove soltanto manifest e database della demo locale e richiede che la rete sia arrestata. Anche il planner dovrà ricostruire il proprio indice dopo un reset.
+
+## Stato e consegna ai colleghi
+
+Il modulo operativo è implementato nel protocollo `2`; l’ultima verifica ha superato 34 test automatici, typecheck e build. Il planner e la chat RAG sono il lavoro successivo, descritto nei documenti dedicati. Riepilogo delle modifiche, interfacce e responsabilità: [implementazione](docs/IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-2) e [consegna AI](docs/CONSEGNA_AI.md#stato-dei-lavori). Il collaudo con l’estensione MetaMask e il confronto con l’indicizzatore del planner restano verifiche manuali/di integrazione.
 
 ## Verifiche
 

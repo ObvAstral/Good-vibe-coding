@@ -6,7 +6,7 @@ import {
   type CartItem,
 } from "./service.js";
 import { getAddress, maxUint256, zeroAddress, type Address } from "viem";
-import { json } from "@riciclo/shared";
+import { json, type PurchaseInput } from "@riciclo/shared";
 const id = { type: "string", pattern: "^[1-9][0-9]{0,77}$" };
 const address = { type: "string", pattern: "^0x[0-9a-fA-F]{40}$" };
 const uuid = {
@@ -39,24 +39,20 @@ export function createApp(service: TerminalService, logger = false) {
         .status(error.statusCode)
         .send({ error: { code: error.code, message: error.message } });
     if (err.validation)
-      return reply
-        .status(400)
-        .send({
-          error: {
-            code: "InvalidInput",
-            message:
-              "Richiesta non valida: controllare indirizzi, quantità e identificativi.",
-          },
-        });
-    request.log.error({ err }, "Errore API");
-    return reply
-      .status(503)
-      .send({
+      return reply.status(400).send({
         error: {
-          code: "ServiceUnavailable",
-          message: "Servizio temporaneamente non disponibile. Riprovare.",
+          code: "InvalidInput",
+          message:
+            "Richiesta non valida: controllare indirizzi, quantità e identificativi.",
         },
       });
+    request.log.error({ err }, "Errore API");
+    return reply.status(503).send({
+      error: {
+        code: "ServiceUnavailable",
+        message: "Servizio temporaneamente non disponibile. Riprovare.",
+      },
+    });
   });
   app.get("/api/config", () => service.config());
   app.get("/api/health", () => ({ status: "ok" }));
@@ -143,6 +139,90 @@ export function createApp(service: TerminalService, logger = false) {
         request.body.storeId,
         request.body.cart,
       );
+    },
+  );
+  const uint = { type: "string", pattern: "^(0|[1-9][0-9]{0,77})$" };
+  const signature = { type: "string", pattern: "^0x[0-9a-fA-F]{130}$" };
+  const quoteSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "buyer",
+      "storeId",
+      "productIds",
+      "quantities",
+      "maxTotal",
+      "nonce",
+      "deadline",
+      "signature",
+    ],
+    properties: {
+      buyer: address,
+      storeId: id,
+      productIds: { type: "array", minItems: 1, maxItems: 4, items: id },
+      quantities: { type: "array", minItems: 1, maxItems: 4, items: id },
+      maxTotal: id,
+      nonce: uint,
+      deadline: id,
+      signature,
+    },
+  };
+  app.post<{ Body: PurchaseInput }>(
+    "/api/purchases",
+    {
+      schema: {
+        body: {
+          type: "object",
+          additionalProperties: false,
+          required: ["quote", "buyerSignature"],
+          properties: { quote: quoteSchema, buyerSignature: signature },
+        },
+      },
+    },
+    async (request, reply) => {
+      const q = request.body.quote;
+      validateAddress(q.buyer);
+      for (const value of [
+        q.storeId,
+        ...q.productIds,
+        ...q.quantities,
+        q.maxTotal,
+        q.nonce,
+        q.deadline,
+      ])
+        validateId(value);
+      if (
+        q.productIds.length !== q.quantities.length ||
+        q.quantities.some((n) => BigInt(n) > 100n)
+      )
+        throw new ApiError(400, "InvalidCart", "Carrello non valido.");
+      const result = await service.purchase(request.body);
+      return reply
+        .status(
+          result.status === "failed"
+            ? 422
+            : result.status === "confirmed"
+              ? 200
+              : 202,
+        )
+        .send(result);
+    },
+  );
+  app.get<{ Params: { buyer: Address; nonce: string } }>(
+    "/api/purchases/:buyer/:nonce",
+    {
+      schema: {
+        params: {
+          type: "object",
+          required: ["buyer", "nonce"],
+          properties: { buyer: address, nonce: uint },
+        },
+      },
+    },
+    (request) => {
+      validateAddress(request.params.buyer);
+      validateId(request.params.nonce);
+      return service.purchaseStatus(request.params.buyer, request.params.nonce);
     },
   );
   return app;

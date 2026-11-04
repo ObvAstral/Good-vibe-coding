@@ -18,6 +18,8 @@ contract RicicloSolidale is ERC20, AccessControl, EIP712 {
     mapping(address => mapping(uint256 => bool)) public usedPurchaseNonces;
     bytes32 public constant PURCHASE_TYPEHASH = keccak256("Purchase(address buyer,uint256 storeId,bytes32 cartHash,uint256 maxTotal,uint256 nonce,uint256 deadline)");
 
+    bytes32 public constant AUTHORIZATION_TYPEHASH = keccak256("PurchaseAuthorization(address buyer,uint256 storeId,bytes32 cartHash,uint256 maxTotal,uint256 nonce,uint256 deadline)");
+
     error InvalidPoint();
     error InvalidProduct();
     error InvalidQuantity();
@@ -38,7 +40,7 @@ contract RicicloSolidale is ERC20, AccessControl, EIP712 {
     event BottlesDeposited(uint256 indexed machineId, uint8 indexed zoneId, address indexed recipient, bytes32 depositId, uint256 bottles, uint256 minted);
     event PurchaseCompleted(uint256 indexed storeId, uint8 indexed zoneId, address indexed buyer, uint256 nonce, uint256[] productIds, uint256[] quantities, uint256 burned);
 
-    constructor() ERC20("Riciclo Solidale", "RCS") EIP712("Riciclo Solidale", "1") {
+    constructor() ERC20("Riciclo Solidale", "RCS") EIP712("Riciclo Solidale", "2") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
     function decimals() public pure override returns (uint8) { return 0; }
@@ -102,16 +104,21 @@ contract RicicloSolidale is ERC20, AccessControl, EIP712 {
             total += products[ids[i]].price * quantities[i];
         }
     }
-    function purchase(uint256 storeId, uint256[] calldata ids, uint256[] calldata quantities, uint256 maxTotal, uint256 nonce, uint256 deadline, bytes calldata signature) external {
+    function purchase(address buyer, uint256 storeId, uint256[] calldata ids, uint256[] calldata quantities, uint256 maxTotal, uint256 nonce, uint256 deadline, bytes calldata storeSignature, bytes calldata buyerSignature) external {
         Point storage p = _activePoint(storeId, Kind.STORE);
+        if (msg.sender != p.operator) revert UnauthorizedOperator();
+        if (buyer == address(0)) revert InvalidRecipient();
         if (block.timestamp > deadline) revert QuoteExpired();
-        if (usedPurchaseNonces[msg.sender][nonce]) revert NonceAlreadyUsed();
-        bytes32 digest = _hashTypedDataV4(keccak256(abi.encode(PURCHASE_TYPEHASH, msg.sender, storeId, keccak256(abi.encode(ids, quantities)), maxTotal, nonce, deadline)));
-        if (ECDSA.recover(digest, signature) != p.operator) revert InvalidSignature();
+        if (usedPurchaseNonces[buyer][nonce]) revert NonceAlreadyUsed();
+        bytes32 basket = keccak256(abi.encode(ids, quantities));
+        bytes32 quoteDigest = _hashTypedDataV4(keccak256(abi.encode(PURCHASE_TYPEHASH, buyer, storeId, basket, maxTotal, nonce, deadline)));
+        if (ECDSA.recover(quoteDigest, storeSignature) != p.operator) revert InvalidSignature();
+        bytes32 authorizationDigest = _hashTypedDataV4(keccak256(abi.encode(AUTHORIZATION_TYPEHASH, buyer, storeId, basket, maxTotal, nonce, deadline)));
+        if (ECDSA.recover(authorizationDigest, buyerSignature) != buyer) revert InvalidSignature();
         uint256 total = quoteCart(ids, quantities);
         if (total != maxTotal) revert PriceChanged();
-        usedPurchaseNonces[msg.sender][nonce] = true;
-        _burn(msg.sender, total);
-        emit PurchaseCompleted(storeId, p.zoneId, msg.sender, nonce, ids, quantities, total);
+        usedPurchaseNonces[buyer][nonce] = true;
+        _burn(buyer, total);
+        emit PurchaseCompleted(storeId, p.zoneId, buyer, nonce, ids, quantities, total);
     }
 }

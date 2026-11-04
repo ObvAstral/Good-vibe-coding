@@ -2,7 +2,12 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { network } from "hardhat";
 import { keccak256, stringToHex, zeroAddress } from "viem";
-import { cartHash, purchaseDomain, purchaseTypes } from "@riciclo/shared";
+import {
+  cartHash,
+  purchaseDomain,
+  purchaseTypes,
+  buyerAuthorizationTypes,
+} from "@riciclo/shared";
 
 async function fixture() {
   const { viem, networkHelpers } = await network.create();
@@ -23,7 +28,11 @@ async function fixture() {
       account: machine.account,
     });
   const client = await viem.getPublicClient();
-  async function quote(overrides: Record<string, any> = {}, signer = store) {
+  async function quote(
+    overrides: Record<string, any> = {},
+    signer = store,
+    buyerSigner = buyer,
+  ) {
     const block = await client.getBlock();
     const q = {
       buyer: buyer.account.address,
@@ -51,7 +60,24 @@ async function fixture() {
         deadline: q.deadline,
       },
     });
+    const buyerSignature = await buyerSigner.signTypedData({
+      domain: purchaseDomain(
+        overrides.chainId ?? 31337,
+        overrides.contractAddress ?? token.address,
+      ),
+      types: buyerAuthorizationTypes,
+      primaryType: "PurchaseAuthorization",
+      message: {
+        buyer: q.buyer,
+        storeId: q.storeId,
+        cartHash: cartHash(q.ids, q.quantities),
+        maxTotal: q.maxTotal,
+        nonce: q.nonce,
+        deadline: q.deadline,
+      },
+    });
     return [
+      q.buyer,
       q.storeId,
       q.ids,
       q.quantities,
@@ -59,6 +85,7 @@ async function fixture() {
       q.nonce,
       q.deadline,
       signature,
+      buyerSignature,
     ] as const;
   }
   return {
@@ -82,7 +109,7 @@ describe("RicicloSolidale", () => {
     assert.equal(await f.token.read.totalSupply(), 0n);
     const mintHash = await f.mint();
     const purchaseHash = await f.token.write.purchase(await f.quote(), {
-      account: f.buyer.account,
+      account: f.store.account,
     });
     assert.equal(await f.token.read.balanceOf([f.buyer.account.address]), 5n);
     assert.equal(await f.token.read.totalSupply(), 5n);
@@ -234,7 +261,7 @@ describe("RicicloSolidale", () => {
     ] as const) {
       await assert.rejects(
         f.token.write.purchase(await f.quote({ ids, quantities }), {
-          account: f.buyer.account,
+          account: f.store.account,
         }),
         /InvalidCart|InvalidQuantity/,
       );
@@ -264,40 +291,43 @@ describe("RicicloSolidale", () => {
     ])
       await assert.rejects(
         f.token.write.purchase(await f.quote(overrides), {
-          account: f.buyer.account,
+          account: f.store.account,
         }),
         /InvalidSignature/,
       );
     await assert.rejects(
       f.token.write.purchase(await f.quote({}, f.other), {
-        account: f.buyer.account,
+        account: f.store.account,
       }),
       /InvalidSignature/,
     );
     const q = await f.quote();
     await f.token.write.registerPoint([3n, 1, 3, f.store.account.address]);
     await assert.rejects(
-      f.token.write.purchase([3n, ...q.slice(1)] as typeof q, {
-        account: f.buyer.account,
-      }),
-      /InvalidSignature/,
-    );
-    await assert.rejects(
-      f.token.write.purchase([q[0], [1n], [1n], ...q.slice(3)] as typeof q, {
-        account: f.buyer.account,
+      f.token.write.purchase([q[0], 3n, ...q.slice(2)] as typeof q, {
+        account: f.store.account,
       }),
       /InvalidSignature/,
     );
     await assert.rejects(
       f.token.write.purchase(
-        [q[0], q[1], q[2], 6n, ...q.slice(4)] as typeof q,
-        { account: f.buyer.account },
+        [q[0], q[1], [1n], [1n], ...q.slice(4)] as typeof q,
+        {
+          account: f.store.account,
+        },
+      ),
+      /InvalidSignature/,
+    );
+    await assert.rejects(
+      f.token.write.purchase(
+        [q[0], q[1], q[2], q[3], 6n, ...q.slice(5)] as typeof q,
+        { account: f.store.account },
       ),
       /InvalidSignature/,
     );
     await f.token.write.setPointOperator([2n, f.other.account.address]);
     await assert.rejects(
-      f.token.write.purchase(q, { account: f.buyer.account }),
+      f.token.write.purchase(q, { account: f.other.account }),
       /InvalidSignature/,
     );
   });
@@ -307,13 +337,13 @@ describe("RicicloSolidale", () => {
     const q = await f.quote();
     await f.token.write.setPointActive([2n, false]);
     await assert.rejects(
-      f.token.write.purchase(q, { account: f.buyer.account }),
+      f.token.write.purchase(q, { account: f.store.account }),
       /InvalidPoint/,
     );
     await f.token.write.setPointActive([2n, true]);
     await f.token.write.setProduct([2n, "Pane", 3n]);
     await assert.rejects(
-      f.token.write.purchase(q, { account: f.buyer.account }),
+      f.token.write.purchase(q, { account: f.store.account }),
       /PriceChanged/,
     );
     await f.token.write.setProduct([2n, "Pane", 2n]);
@@ -323,7 +353,7 @@ describe("RicicloSolidale", () => {
       maxTotal: 12n,
     });
     await assert.rejects(
-      f.token.write.purchase(expensive, { account: f.buyer.account }),
+      f.token.write.purchase(expensive, { account: f.store.account }),
       /ERC20InsufficientBalance/,
     );
     assert.equal(
@@ -331,22 +361,22 @@ describe("RicicloSolidale", () => {
       false,
     );
     assert.equal(await f.token.read.totalSupply(), 10n);
-    await f.token.write.purchase(q, { account: f.buyer.account });
+    await f.token.write.purchase(q, { account: f.store.account });
     await assert.rejects(
-      f.token.write.purchase(q, { account: f.buyer.account }),
+      f.token.write.purchase(q, { account: f.store.account }),
       /NonceAlreadyUsed/,
     );
     await assert.rejects(
       f.token.write.purchase(
         await f.quote({ ids: [4n], quantities: [2n], maxTotal: 6n, nonce: 2n }),
-        { account: f.buyer.account },
+        { account: f.store.account },
       ),
       /ERC20InsufficientBalance/,
     );
     const expired = await f.quote({ nonce: 3n });
     await f.networkHelpers.time.increase(301);
     await assert.rejects(
-      f.token.write.purchase(expired, { account: f.buyer.account }),
+      f.token.write.purchase(expired, { account: f.store.account }),
       /QuoteExpired/,
     );
     assert.equal(
@@ -362,6 +392,71 @@ describe("RicicloSolidale", () => {
         )
       ).length,
       1,
+    );
+  });
+  it("cliente con zero ETH: firma soltanto, gas pagato dal supermercato", async () => {
+    const f = await fixture();
+    await f.mint();
+    await f.networkHelpers.setBalance(f.buyer.account.address, 0n);
+    const before = await f.client.getBalance({
+      address: f.store.account.address,
+    });
+    const hash = await f.token.write.purchase(await f.quote(), {
+      account: f.store.account,
+    });
+    const receipt = await f.client.getTransactionReceipt({ hash });
+    const tx = await f.client.getTransaction({ hash });
+    assert.equal(tx.from.toLowerCase(), f.store.account.address.toLowerCase());
+    assert.equal(
+      await f.client.getBalance({ address: f.buyer.account.address }),
+      0n,
+    );
+    assert.equal(
+      before -
+        (await f.client.getBalance({ address: f.store.account.address })),
+      receipt.gasUsed * receipt.effectiveGasPrice,
+    );
+    assert.equal(await f.token.read.balanceOf([f.buyer.account.address]), 5n);
+  });
+  it("nessun acquisto senza consenso del buyer o da un operatore diverso", async () => {
+    const f = await fixture();
+    await f.mint();
+    const q = await f.quote();
+    await assert.rejects(
+      f.token.write.purchase(q, { account: f.buyer.account }),
+      /UnauthorizedOperator/,
+    );
+    await assert.rejects(
+      f.token.write.purchase(q, { account: f.other.account }),
+      /UnauthorizedOperator/,
+    );
+    await assert.rejects(
+      f.token.write.purchase(await f.quote({}, f.store, f.other), {
+        account: f.store.account,
+      }),
+      /InvalidSignature/,
+    );
+    await assert.rejects(
+      f.token.write.purchase([...q.slice(0, 8), "0x"] as typeof q, {
+        account: f.store.account,
+      }),
+      /ECDSAInvalidSignatureLength/,
+    );
+    const self = await f.quote(
+      { buyer: f.store.account.address },
+      f.store,
+      f.store,
+    );
+    await assert.rejects(
+      f.token.write.purchase([...self.slice(0, 8), self[7]] as typeof self, {
+        account: f.store.account,
+      }),
+      /InvalidSignature/,
+    );
+    assert.equal(await f.token.read.totalSupply(), 10n);
+    assert.equal(
+      await f.token.read.usedPurchaseNonces([f.buyer.account.address, 1n]),
+      false,
     );
   });
 });

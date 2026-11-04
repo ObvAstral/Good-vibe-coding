@@ -6,12 +6,12 @@ Realizzare un modulo indipendente dal simulatore di macchinette e supermercati. 
 
 Concordati: Hardhat locale, storico simulato, top 3 riferita a quartieri con nome, equilibrio tra contesto sociale/copertura e utilizzo, fonti verificabili, accesso riservato. Non serve addestrare un modello predittivo per questa prima versione. Le raccomandazioni sono supporto alla decisione, non previsioni validate della domanda reale.
 
-I dettagli operativi di seguito sono default proposti per iniziare senza ulteriori scelte. In caso di conflitto questa specifica e DATA_PIPELINE.md prevalgono sulle parti precedenti della documentazione relative al planner. Il contratto operativo conserva gli eventi concordati in INTERFACCIA_PLANNER.md.
+I dettagli operativi di seguito sono default proposti per iniziare senza ulteriori scelte. In caso di conflitto questa specifica e DATA_PIPELINE.md prevalgono sulle parti precedenti della documentazione relative al planner. Il contratto operativo è implementato nel protocollo `2` e conserva gli eventi concordati in INTERFACCIA_PLANNER.md. Il gas dell’acquisto è pagato dal supermercato; il cliente firma il consenso senza inviare transazioni. Per stato, API e nuovo deploy seguire [IMPLEMENTAZIONE.md](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-2).
 
 ## Componenti
 
 - `analytics/`: Python, pandas, openpyxl, geopandas e SQLite per importazioni, join geografici, indicatori e ranking. Bloccare dipendenze compatibili in un lockfile.
-- `planner/`: Node.js/TypeScript con viem per indicizzazione eventi e server HTTP per chat e strumenti. Interfaccia React del planner distinta dal simulatore; aggiungere `/gestione/chat` al frontend condiviso quando disponibile.
+- `planner/`: Node.js/TypeScript con viem per indicizzazione eventi e server HTTP per chat e strumenti. Interfaccia React del planner distinta dal simulatore; aggiungere `/gestione/chat` al frontend condiviso `web/`, già disponibile per macchinetta e supermercato. La chat dei gestori resta da implementare.
 - SQLite condiviso tra importazioni e letture, con transazioni e WAL; API degli strumenti incapsulate nel servizio planner. Nessun SQL o codice generato dal modello viene eseguito.
 - Retrieval vettoriale locale QVAC sulle schede e sulle note metodologiche; SQLite conserva metadati e risultati numerici. Seguire RAG_QVAC_DEEPSEEK.md.
 - DeepSeek chiamato soltanto dal server via fetch HTTP. Modello configurabile con `DEEPSEEK_MODEL`, default `deepseek-flash`; chiave `DEEPSEEK_API_KEY` nell'ambiente, mai nel browser o nei documenti condivisi. Endpoint e prezzi da ricontrollare prima dell'avvio.

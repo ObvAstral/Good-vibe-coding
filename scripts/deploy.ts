@@ -7,7 +7,7 @@ import {
   http,
   type Hash,
 } from "viem";
-import { json, type Deployment } from "@riciclo/shared";
+import { json, PROTOCOL_VERSION, type Deployment } from "@riciclo/shared";
 import { tokenAbi } from "@riciclo/shared/abi";
 import { localAccount, localRpc, assertLocal } from "@riciclo/shared/local";
 import { projectRoot, readArtifact } from "@riciclo/shared/deployment";
@@ -77,6 +77,7 @@ export async function deployDemo(rpcUrl = localRpc): Promise<Deployment> {
       }),
     );
   return {
+    protocolVersion: PROTOCOL_VERSION,
     chainId,
     contractAddress: address,
     deploymentBlock: receipt.blockNumber.toString(),

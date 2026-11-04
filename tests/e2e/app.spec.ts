@@ -14,6 +14,8 @@ async function wallet(page: Page, index = 5) {
         (listeners[event] ?? []).forEach((fn) => fn(value));
       const control = {
         rejectNext: false,
+        sentTransactions: 0,
+        signedAuthorizations: 0,
         changeAccount: (address: string) => {
           current = address;
           emit("accountsChanged", [current]);
@@ -62,12 +64,22 @@ async function wallet(page: Page, index = 5) {
             emit("chainChanged", chainId);
             return null;
           }
-          if (method === "eth_sendTransaction" && control.rejectNext) {
+          if (
+            (method === "eth_signTypedData_v4" ||
+              method === "eth_signTypedData") &&
+            control.rejectNext
+          ) {
             control.rejectNext = false;
             throw Object.assign(new Error("User rejected the request"), {
               code: 4001,
             });
           }
+          if (method === "eth_sendTransaction") control.sentTransactions++;
+          if (
+            method === "eth_signTypedData_v4" ||
+            method === "eth_signTypedData"
+          )
+            control.signedAuthorizations++;
           const result = await fetch(rpc, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -256,7 +268,7 @@ test("preventivo scaduto disabilita la conferma", async ({ page }) => {
     page.getByRole("button", { name: "Conferma acquisto" }),
   ).toBeDisabled();
 });
-test("ETH insufficienti: accredito possibile, acquisto disabilitato", async ({
+test("cliente con zero ETH acquista: il supermercato invia e paga il gas", async ({
   page,
 }) => {
   const rpc = "http://127.0.0.1:18547";
@@ -276,9 +288,55 @@ test("ETH insufficienti: accredito possibile, acquisto disabilitato", async ({
   await page.getByLabel("Quantità Acqua").fill("1");
   await page.getByRole("button", { name: "Richiedi preventivo" }).click();
   await expect(page.getByText("Totale confermato: 1 RCS")).toBeVisible();
-  await expect(page.getByText("Servono ETH di test nel wallet")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Conferma acquisto" }),
-  ).toBeDisabled();
-  await expect(page.getByTestId("balance")).toHaveText("1 RCS");
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Conferma acquisto" }).click();
+  await expect(page.getByRole("status")).toContainText("Acquisto confermato");
+  await expect(page.getByTestId("balance")).toHaveText("0 RCS");
+  expect(
+    await page.evaluate(() => (window as any).testWallet.sentTransactions),
+  ).toBe(0);
+  expect(
+    await page.evaluate(() => (window as any).testWallet.signedAuthorizations),
+  ).toBe(1);
+  const hash = await page.getByTestId("tx-hash").textContent();
+  const client = createPublicClient({ transport: http(rpc) });
+  const tx = await client.getTransaction({ hash: hash as `0x${string}` });
+  expect(tx.from.toLowerCase()).toBe(localAccount(4).address.toLowerCase());
+  expect(await client.getBalance({ address: localAccount(11).address })).toBe(
+    0n,
+  );
+});
+
+test("ricaricare la pagina recupera l’acquisto senza una seconda transazione", async ({
+  page,
+}) => {
+  await wallet(page, 12);
+  await deposit(page);
+  await store(page);
+  await page.getByLabel("Quantità Pane").fill("1");
+  await page.getByRole("button", { name: "Richiedi preventivo" }).click();
+  await expect(page.getByText("Totale confermato: 2 RCS")).toBeVisible();
+  const client = createPublicClient({
+      transport: http("http://127.0.0.1:18547"),
+    }),
+    operator = localAccount(4).address;
+  const before = await client.getTransactionCount({ address: operator });
+  await page.route("**/api/purchases/**", (route) => route.abort("failed"));
+  await page.getByRole("button", { name: "Conferma acquisto" }).click();
+  await expect(page.getByTestId("tx-hash")).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      Object.keys(sessionStorage).some((key) => key.endsWith(":purchase")),
+    ),
+  ).toBe(true);
+  await page.unroute("**/api/purchases/**");
+  await page.reload();
+  await page.getByRole("button", { name: "Collega MetaMask" }).click();
+  await expect(page.getByRole("status")).toContainText("Acquisto confermato");
+  await expect(page.getByTestId("balance")).toHaveText("8 RCS");
+  expect(await client.getTransactionCount({ address: operator })).toBe(
+    before + 1,
+  );
 });

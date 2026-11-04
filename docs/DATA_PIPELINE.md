@@ -23,7 +23,9 @@ Non confrontare direttamente IDISE 2021 e 2023: il riferimento comunale cambia. 
 
 ## Registro dei punti e blockchain
 
-Usare gli eventi già definiti in INTERFACCIA_PLANNER.md, via RPC Hardhat. Un solo nodo RPC basta per leggere la stessa catena. Il manifest di deploy identifica rete, contratto, ABI e blocco iniziale.
+Usare gli eventi già definiti in INTERFACCIA_PLANNER.md, via RPC Hardhat. Un solo nodo RPC basta per leggere la stessa catena. Il manifest `deployments/local.json` espone il protocollo `2`, rete, contratto, ABI, blocco e hash iniziali; è generato dal deploy del modulo già implementato. Vedi [IMPLEMENTAZIONE.md](IMPLEMENTAZIONE.md#aggiornamento-per-i-colleghi--protocollo-2) per la consegna operativa.
+
+Nel protocollo `2` il cliente autorizza l’acquisto con una firma, mentre il supermercato invia la transazione e paga il gas. Per i distinti e le analisi usare il campo `buyer` di `PurchaseCompleted`: `transaction.from` identifica il negozio. Le firme degli eventi non cambiano.
 
 Il registro aggiunge a ogni pointId coordinate verificate e posizione versionata per deployment; ricavare quartiere e zona statistica con point-in-polygon. Il codice di circoscrizione dell'evento non consente da solo di assegnare il quartiere. Se un punto si sposta, creare un nuovo ID come già previsto dal contratto. Per coordinate mancanti conservare le operazioni nei totali, escludendole dalle analisi di quartiere.
 

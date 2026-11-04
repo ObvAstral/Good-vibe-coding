@@ -11,9 +11,22 @@ import {
 import { readDeployment } from "@riciclo/shared/deployment";
 import { tokenAbi } from "@riciclo/shared/abi";
 import { localAccount, localRpc, assertLocal } from "@riciclo/shared/local";
-import { cartHash, purchaseDomain, purchaseTypes } from "@riciclo/shared";
-const rpc = process.env.RPC_URL ?? localRpc;
-const deployment = readDeployment();
+import {
+  PROTOCOL_VERSION,
+  buyerAuthorization,
+  purchaseArgs,
+  purchaseDomain,
+  purchaseMessage,
+  purchaseTypes,
+  type Quote,
+} from "@riciclo/shared";
+const rpc = process.env.RPC_URL ?? localRpc,
+  deployment = readDeployment();
+assertLocal(rpc, deployment.chainId);
+if (deployment.protocolVersion !== PROTOCOL_VERSION)
+  throw new Error(
+    "Serve un nuovo deploy locale del contratto con gas pagato dal supermercato.",
+  );
 const client = createPublicClient({ transport: http(rpc) });
 assertLocal(rpc, await client.getChainId());
 const chain = defineChain({
@@ -37,12 +50,12 @@ const before = await client.readContract({
   functionName: "balanceOf",
   args: [buyer.address],
 });
-async function mine(hash: `0x${string}`) {
-  assert.equal(
-    (await client.waitForTransactionReceipt({ hash })).status,
-    "success",
-  );
-}
+const buyerEth = await client.getBalance({ address: buyer.address });
+const mine = async (hash: `0x${string}`) => {
+  const receipt = await client.waitForTransactionReceipt({ hash });
+  assert.equal(receipt.status, "success");
+  return receipt;
+};
 await mine(
   await wallet(machine).writeContract({
     ...contract,
@@ -50,29 +63,49 @@ await mine(
     args: [1n, buyer.address, 10n, keccak256(toHex(randomUUID()))],
   }),
 );
-const nonce = BigInt(keccak256(toHex(randomUUID()))),
-  deadline = (await client.getBlock()).timestamp + 300n;
-const ids = [2n, 4n],
-  quantities = [1n, 1n];
-const signature = await wallet(store).signTypedData({
-  domain: purchaseDomain(31337, contract.address),
-  types: purchaseTypes,
-  primaryType: "Purchase",
-  message: {
+async function authorize(
+  ids: bigint[],
+  quantities: bigint[],
+  maxTotal: bigint,
+) {
+  const block = await client.getBlock();
+  const issued =
+    block.timestamp > BigInt(Math.floor(Date.now() / 1000))
+      ? block.timestamp
+      : BigInt(Math.floor(Date.now() / 1000));
+  const q: Quote = {
     buyer: buyer.address,
-    storeId: 4n,
-    cartHash: cartHash(ids, quantities),
-    maxTotal: 5n,
-    nonce,
-    deadline,
-  },
-});
-await mine(
-  await wallet(buyer).writeContract({
+    storeId: "4",
+    productIds: ids.map(String),
+    quantities: quantities.map(String),
+    maxTotal: String(maxTotal),
+    nonce: BigInt(keccak256(toHex(randomUUID()))).toString(),
+    deadline: String(issued + 300n),
+    signature: "0x",
+  };
+  q.signature = await wallet(store).signTypedData({
+    domain: purchaseDomain(31337, contract.address),
+    types: purchaseTypes,
+    primaryType: "Purchase",
+    message: purchaseMessage(q),
+  });
+  const buyerSignature = await buyer.signTypedData(
+    buyerAuthorization(q, deployment),
+  );
+  return purchaseArgs(q, buyerSignature);
+}
+const storeBefore = await client.getBalance({ address: store.address });
+const receipt = await mine(
+  await wallet(store).writeContract({
     ...contract,
     functionName: "purchase",
-    args: [4n, ids, quantities, 5n, nonce, deadline, signature],
+    args: await authorize([2n, 4n], [1n, 1n], 5n),
   }),
+);
+assert.equal(await client.getBalance({ address: buyer.address }), buyerEth);
+assert.equal(
+  storeBefore - (await client.getBalance({ address: store.address })),
+  receipt.gasUsed * receipt.effectiveGasPrice,
 );
 const after = await client.readContract({
   ...contract,
@@ -85,32 +118,17 @@ assert.equal(
   supplyBefore + 5n,
 );
 if (before === 0n) {
-  const badIds = [4n],
-    badQty = [2n];
-  const bad = await wallet(store).signTypedData({
-    domain: purchaseDomain(31337, contract.address),
-    types: purchaseTypes,
-    primaryType: "Purchase",
-    message: {
-      buyer: buyer.address,
-      storeId: 4n,
-      cartHash: cartHash(badIds, badQty),
-      maxTotal: 6n,
-      nonce: nonce + 1n,
-      deadline,
-    },
-  });
   await assert.rejects(
     client.simulateContract({
       ...contract,
-      account: buyer,
+      account: store,
       functionName: "purchase",
-      args: [4n, badIds, badQty, 6n, nonce + 1n, deadline, bad],
+      args: await authorize([4n], [2n], 6n),
     }),
     /ERC20InsufficientBalance/,
   );
   console.log("Acquisto da 6 RCS respinto: saldo invariato.");
 }
 console.log(
-  `Demo completata: 10 bottiglie → 10 RCS → burn 5. Saldo ${after} RCS (iniziale ${before}).`,
+  `Demo completata: 10 bottiglie → 10 RCS → burn 5. Saldo ${after} RCS. Gas pagato dal supermercato; ETH del cliente invariati.`,
 );
