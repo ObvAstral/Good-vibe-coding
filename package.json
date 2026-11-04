@@ -9,9 +9,42 @@
   "scripts": {
     "start": "node src/chat.js",
     "doctor": "node scripts/doctor.js",
-    "smoke": "node src/chat.js 'Rispondi soltanto: QVAC pronto'"
+    "smoke": "node src/chat.js 'Rispondi soltanto: QVAC pronto'",
+    "compile": "npm run compile -w @riciclo/contracts && tsx scripts/export-abi.ts",
+    "chain": "npm run node -w @riciclo/contracts",
+    "test:contracts": "npm run compile && npm run test -w @riciclo/contracts",
+    "deploy:local": "tsx --env-file-if-exists=.env scripts/deploy.ts",
+    "demo:token": "tsx --env-file-if-exists=.env scripts/demo-token.ts",
+    "dev:server": "tsx --env-file-if-exists=.env server/src/main.ts",
+    "dev:web": "npm run dev -w @riciclo/web",
+    "dev": "tsx scripts/dev.ts",
+    "test:backend": "tsx --test server/test/*.test.ts",
+    "test:integration": "tsx --test tests/integration.test.ts",
+    "test:e2e": "npm run compile && playwright test",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run compile && npm run typecheck && npm run build -w @riciclo/web",
+    "test": "npm run test:contracts && npm run test:backend && npm run test:integration",
+    "demo:reset": "tsx scripts/reset.ts",
+    "fixtures": "tsx --env-file-if-exists=.env scripts/fixtures.ts",
+    "wallet:local": "tsx scripts/local-wallet.ts"
   },
   "dependencies": {
     "@qvac/sdk": "file:vendor/qvac-sdk-0.23.0.tgz"
+  },
+  "workspaces": [
+    "contracts",
+    "shared",
+    "server",
+    "web"
+  ],
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "tsx": "4.23.15",
+    "@types/node": "22.19.0",
+    "@types/better-sqlite3": "9.6.0",
+    "@playwright/test": "1.64.1"
+  },
+  "overrides": {
+    "zod@4.6.5": "4.6.6"
   }
 }

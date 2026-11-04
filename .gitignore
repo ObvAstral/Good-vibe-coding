@@ -3,3 +3,14 @@ node_modules/
 .qvac/
 *.log
 .DS_Store
+
+.env.*
+!.env.example
+**/artifacts/
+**/cache/
+**/dist/
+deployments/*.json
+.data/
+test-results/
+playwright-report/
+shared/src/abi.ts

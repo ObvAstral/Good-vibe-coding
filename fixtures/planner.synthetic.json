@@ -1,0 +1,133 @@
+{
+  "source": "synthetic",
+  "physicalDepositsSimulated": true,
+  "period": {
+    "from": "2026-11-01T10:00:00.000Z",
+    "to": "2026-11-02T10:00:00.000Z"
+  },
+  "events": [
+    {
+      "chainId": 31337,
+      "contractAddress": "0x0000000000000000000000000000000000000100",
+      "logIndex": 0,
+      "eventName": "BottlesDeposited",
+      "blockNumber": "10",
+      "blockHash": "0x000000000000000000000000000000000000000000000000000000000000000a",
+      "transactionHash": "0x000000000000000000000000000000000000000000000000000000000000006e",
+      "timestamp": "2026-11-01T10:00:00.000Z",
+      "args": {
+        "machineId": "1",
+        "zoneId": 7,
+        "recipient": "0x0000000000000000000000000000000000000005",
+        "depositId": "0x0000000000000000000000000000000000000000000000000000000000000001",
+        "bottles": "10",
+        "minted": "10"
+      }
+    },
+    {
+      "chainId": 31337,
+      "contractAddress": "0x0000000000000000000000000000000000000100",
+      "logIndex": 0,
+      "eventName": "PurchaseCompleted",
+      "blockNumber": "11",
+      "blockHash": "0x000000000000000000000000000000000000000000000000000000000000000b",
+      "transactionHash": "0x000000000000000000000000000000000000000000000000000000000000006f",
+      "timestamp": "2026-11-01T11:00:00.000Z",
+      "args": {
+        "storeId": "4",
+        "zoneId": 2,
+        "buyer": "0x0000000000000000000000000000000000000005",
+        "nonce": "1",
+        "productIds": ["2", "4"],
+        "quantities": ["1", "1"],
+        "burned": "5"
+      }
+    },
+    {
+      "chainId": 31337,
+      "contractAddress": "0x0000000000000000000000000000000000000100",
+      "logIndex": 0,
+      "eventName": "BottlesDeposited",
+      "blockNumber": "12",
+      "blockHash": "0x000000000000000000000000000000000000000000000000000000000000000c",
+      "transactionHash": "0x0000000000000000000000000000000000000000000000000000000000000070",
+      "timestamp": "2026-11-02T10:00:00.000Z",
+      "args": {
+        "machineId": "1",
+        "zoneId": 7,
+        "recipient": "0x0000000000000000000000000000000000000005",
+        "depositId": "0x0000000000000000000000000000000000000000000000000000000000000002",
+        "bottles": "2",
+        "minted": "2"
+      }
+    }
+  ],
+  "expected": {
+    "byDayZone": [
+      {
+        "day": "2026-11-01",
+        "zoneId": 2,
+        "depositCount": "0",
+        "bottlesCollected": "0",
+        "tokensMinted": "0",
+        "purchaseCount": "1",
+        "tokensBurned": "5",
+        "distinctDepositWallets": "0",
+        "distinctPurchaseWallets": "1"
+      },
+      {
+        "day": "2026-11-01",
+        "zoneId": 7,
+        "depositCount": "1",
+        "bottlesCollected": "10",
+        "tokensMinted": "10",
+        "purchaseCount": "0",
+        "tokensBurned": "0",
+        "distinctDepositWallets": "1",
+        "distinctPurchaseWallets": "0"
+      },
+      {
+        "day": "2026-11-02",
+        "zoneId": 7,
+        "depositCount": "1",
+        "bottlesCollected": "2",
+        "tokensMinted": "2",
+        "purchaseCount": "0",
+        "tokensBurned": "0",
+        "distinctDepositWallets": "1",
+        "distinctPurchaseWallets": "0"
+      }
+    ],
+    "byPoint": [
+      {
+        "pointId": "1",
+        "depositCount": "2",
+        "bottlesCollected": "12",
+        "tokensMinted": "12",
+        "purchaseCount": "0",
+        "tokensBurned": "0",
+        "distinctDepositWallets": "1",
+        "distinctPurchaseWallets": "0"
+      },
+      {
+        "pointId": "4",
+        "depositCount": "0",
+        "bottlesCollected": "0",
+        "tokensMinted": "0",
+        "purchaseCount": "1",
+        "tokensBurned": "5",
+        "distinctDepositWallets": "0",
+        "distinctPurchaseWallets": "1"
+      }
+    ],
+    "total": {
+      "depositCount": "2",
+      "bottlesCollected": "12",
+      "tokensMinted": "12",
+      "purchaseCount": "1",
+      "tokensBurned": "5",
+      "distinctDepositWallets": "1",
+      "distinctPurchaseWallets": "1"
+    }
+  }
+}
