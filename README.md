@@ -49,6 +49,8 @@ Il nuovo flusso con quartieri e punti fissi richiede contratto, ABI e manifest d
 
 Il reset rimuove soltanto manifest e database della demo locale e richiede che la rete sia arrestata. Anche il planner dovrà ricostruire il proprio indice dopo un reset.
 
+Il frontend segue lo stile [ThoughtStream](design/thoughtstream-DESIGN.md), con palette neutra, titoli serif e layout essenziale. I font sono inclusi nel progetto per l’uso offline. Dettagli: [stile del frontend](docs/AVVIO.md#stile-del-frontend).
+
 ## Stato e consegna ai colleghi
 
 La demo ha **10 bidoni e 6 supermercati fissi**, senza funzione di aggiunta, distribuiti in dieci quartieri. Quartiere e circoscrizione sono mostrati sul sito e registrati negli eventi; `npm run fixtures` esporta i dati e gli aggregati per il planner. I codici dei 23 quartieri sono nel catalogo condiviso.

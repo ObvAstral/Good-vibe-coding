@@ -31,6 +31,11 @@ import {
   type DepositResult,
 } from "@riciclo/shared";
 import { api, HttpError, message } from "./api.js";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-700.css";
+import "@fontsource/libre-baskerville/latin-400.css";
+import "@fontsource/libre-baskerville/latin-700.css";
+import "@fontsource/source-code-pro/latin-400.css";
 import "./style.css";
 
 type Config = { deployment: Deployment; rpcUrl: string; points: Point[] };
@@ -386,6 +391,9 @@ function App({ runtime }: { runtime: Config }) {
   );
   return (
     <>
+      <a className="skip-link" href="#contenuto">
+        Vai al contenuto
+      </a>
       <header>
         <a
           className="brand"
@@ -395,17 +403,16 @@ function App({ runtime }: { runtime: Config }) {
             navigate("machine");
           }}
         >
-          <span className="mark">↻</span>
           <span>
             Riciclo<span className="brand-light"> Solidale</span>
           </span>
         </a>
-        <span className="network">● Hardhat · rete locale</span>
+        <span className="network">Hardhat · rete locale</span>
       </header>
-      <main>
-        <section className="intro">
+      <main id="contenuto" tabIndex={-1}>
+        <section className="intro" aria-labelledby="page-title">
           <div className="eyebrow">PICCOLI GESTI, RISORSE CONDIVISE</div>
-          <h1>
+          <h1 id="page-title">
             Ogni bottiglia
             <br />
             può fare la differenza.
@@ -477,6 +484,7 @@ function App({ runtime }: { runtime: Config }) {
         <nav aria-label="Operazioni">
           <button
             className={page === "machine" ? "tab active" : "tab"}
+            aria-current={page === "machine" ? "page" : undefined}
             onClick={() => navigate("machine")}
             disabled={processing}
           >
@@ -484,25 +492,25 @@ function App({ runtime }: { runtime: Config }) {
           </button>
           <button
             className={page === "store" ? "tab active" : "tab"}
+            aria-current={page === "store" ? "page" : undefined}
             onClick={() => navigate("store")}
             disabled={processing}
           >
             02 <span>Usa i tuoi crediti</span>
           </button>
         </nav>
-        <section className="panel">
+        <section className="panel" aria-labelledby="operation-title">
           <div className="panel-heading">
             <div>
               <div className="eyebrow">
                 {page === "machine" ? "LA MACCHINETTA" : "IL SUPERMERCATO"}
               </div>
-              <h2>
+              <h2 id="operation-title">
                 {page === "machine"
                   ? "Dai valore al tuo riciclo."
                   : "Scegli la tua spesa."}
               </h2>
             </div>
-            <span className="round-icon">{page === "machine" ? "↻" : "▤"}</span>
           </div>
           <label className="field">
             {page === "machine" ? "Punto di raccolta" : "Negozio aderente"}
@@ -525,8 +533,8 @@ function App({ runtime }: { runtime: Config }) {
           </label>
           {selected ? (
             <p className="point">
-              ● {selected.name}{" "}
-              <span>
+              <span className="point-name">{selected.name}</span>
+              <span className="point-location">
                 Torino · Quartiere {selected.neighborhoodName} · Circoscrizione{" "}
                 {selected.zoneId}
               </span>

@@ -31,6 +31,14 @@ npm run dev:web
 
 Con questa configurazione il database è `.data/local.sqlite`. Dopo l’arresto della rete Hardhat, i suoi dati on-chain vengono persi: eseguire `npm run demo:reset` prima di un nuovo deployment. Un cambio di deployment con un database precedente viene rifiutato. Manifest e database non sono inclusi nel repository.
 
+## Stile del frontend
+
+Le pagine macchinetta e supermercato seguono [ThoughtStream](../design/thoughtstream-DESIGN.md): palette stone su fondo bianco caldo, colonna centrale di massimo 680 px, titoli serif, spaziatura ampia, bordi sottili e componenti squadrati senza ombre. Il catalogo prodotti è una lista verticale; il layout si adatta a telefono, tablet e desktop.
+
+I font Inter, Libre Baskerville e Source Code Pro sono inclusi tramite dipendenze `@fontsource` con versioni fissate nel lockfile e serviti dal frontend, anche offline. Le licenze sono conservate in `web/public/font-licenses/` e copiate nel build. Si usano i pesi 400 e 700. Colori, tipografia e componenti sono definiti in `web/src/style.css`; il browser riceve lo stesso sfondo dal `theme-color` di `web/index.html`.
+
+Le operazioni hanno un indicatore della pagina corrente, controlli con focus da tastiera e un collegamento iniziale “Vai al contenuto”. Build e typecheck superati; 9 test browser verificano i flussi operativi. Controllate entrambe le viste a 320, 390, 768 e 1280 px, con caricamento dei font locali e senza overflow orizzontale.
+
 ## Account e punti iniziali
 
 | ID  | Punto                           | Tipo    | Quartiere (IDQUART)      | Circoscrizione | Account Hardhat operatore |
