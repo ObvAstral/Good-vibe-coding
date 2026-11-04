@@ -46,4 +46,4 @@ Poco utilizzo può dipendere da assenza di negozi, accessibilità, guasti o scar
 
 ## Accettazione
 
-Con fixture note, verificare totali per giorno, punto e circoscrizione; nessun doppio conteggio dopo due sincronizzazioni; nessun evento da transazioni fallite; ricostruzione dopo rollback; gestione di wallet presenti in più giorni e di raccolta/spesa in zone diverse. La demo deve distinguere dati sintetici e transazioni reali di testnet, mostrando periodo e fonti.
+Con fixture note, verificare totali per giorno, punto e circoscrizione; nessun doppio conteggio dopo due sincronizzazioni; nessun evento da transazioni fallite; ricostruzione dopo rollback; gestione di wallet presenti in più giorni e di raccolta/spesa in zone diverse. La demo deve distinguere dati sintetici e transazioni eseguite sulla rete Hardhat locale, mostrando periodo e fonti.

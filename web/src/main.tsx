@@ -1,0 +1,658 @@
+import React, { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQueryClient,
+} from "@tanstack/react-query";
+import {
+  WagmiProvider,
+  createConfig,
+  http,
+  useConnect,
+  useConnection,
+  useDisconnect,
+  usePublicClient,
+  useReadContract,
+  useSwitchChain,
+  useWriteContract,
+  useBalance,
+} from "wagmi";
+import { injected } from "wagmi/connectors";
+import { defineChain, formatEther, type Address } from "viem";
+import { tokenAbi } from "@riciclo/shared/abi";
+import {
+  purchaseArgs,
+  type Deployment,
+  type Point,
+  type Quote,
+  type DepositResult,
+} from "@riciclo/shared";
+import { api, HttpError, message } from "./api.js";
+import "./style.css";
+
+type Config = { deployment: Deployment; rpcUrl: string; points: Point[] };
+type Pending = {
+  requestId: string;
+  recipient: Address;
+  machineId: string;
+  bottles: number;
+};
+const short = (value: string) => `${value.slice(0, 6)}…${value.slice(-4)}`;
+function App({ runtime }: { runtime: Config }) {
+  const connection = useConnection();
+  const { address, chainId, isConnected } = connection;
+  const connect = useConnect(),
+    disconnect = useDisconnect(),
+    switchChain = useSwitchChain(),
+    write = useWriteContract();
+  const client = usePublicClient({ chainId: runtime.deployment.chainId })!;
+  const query = useQueryClient();
+  const contract = {
+    address: runtime.deployment.contractAddress,
+    abi: tokenAbi,
+  };
+  const balance = useReadContract({
+    ...contract,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    chainId: runtime.deployment.chainId,
+    query: { enabled: !!address, refetchInterval: 5000 },
+  });
+  const eth = useBalance({
+    address,
+    chainId: runtime.deployment.chainId,
+    query: { enabled: !!address, refetchInterval: 5000 },
+  });
+  const products = useReadContract({
+    ...contract,
+    functionName: "getProducts",
+    chainId: runtime.deployment.chainId,
+    query: { refetchInterval: 10000 },
+  });
+  const [page, setPage] = useState(
+    location.pathname === "/supermercato" ? "store" : "machine",
+  );
+  const [points, setPoints] = useState(runtime.points);
+  const machines = points.filter((p) => p.kind === 0 && p.active),
+    stores = points.filter((p) => p.kind === 1 && p.active);
+  const [machineId, setMachineId] = useState(machines[0]?.id ?? ""),
+    [storeId, setStoreId] = useState(stores[0]?.id ?? "");
+  const [bottles, setBottles] = useState(10),
+    [cart, setCart] = useState<Record<string, number>>({});
+  const [quote, setQuote] = useState<Quote | null>(null),
+    [busy, setBusy] = useState(false),
+    [notice, setNotice] = useState(""),
+    [hash, setHash] = useState<string | null>(null),
+    [pending, setPending] = useState<Pending | null>(null),
+    [now, setNow] = useState(Date.now());
+  const action = useRef(false);
+  const storageKey = address
+    ? `riciclo:${runtime.deployment.chainId}:${runtime.deployment.contractAddress}:${runtime.deployment.deploymentBlockHash}:${address.toLowerCase()}`
+    : null;
+  const context = `${address}:${chainId}:${storeId}:${JSON.stringify(cart)}`;
+  const contextRef = useRef(context);
+  contextRef.current = context;
+  const ready = isConnected && chainId === runtime.deployment.chainId;
+  const items = Object.entries(cart)
+    .filter(([, n]) => n > 0)
+    .map(([productId, quantity]) => ({ productId, quantity }));
+  const total = (products.data ?? []).reduce(
+    (sum, p) => sum + p.price * BigInt(cart[p.id.toString()] ?? 0),
+    0n,
+  );
+  const expired = !!quote && Number(quote.deadline) * 1000 <= now;
+  function savePending(value: Pending | null) {
+    if (storageKey) {
+      if (value) sessionStorage.setItem(storageKey, JSON.stringify(value));
+      else sessionStorage.removeItem(storageKey);
+    }
+    setPending(value);
+  }
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    setQuote(null);
+  }, [context]);
+  useEffect(() => {
+    setNotice("");
+    setHash(null);
+    try {
+      setPending(
+        storageKey
+          ? JSON.parse(sessionStorage.getItem(storageKey) ?? "null")
+          : null,
+      );
+    } catch {
+      setPending(null);
+    }
+  }, [storageKey]);
+  useEffect(() => {
+    const change = () =>
+      setPage(location.pathname === "/supermercato" ? "store" : "machine");
+    addEventListener("popstate", change);
+    return () => removeEventListener("popstate", change);
+  }, []);
+  useEffect(() => {
+    let live = true;
+    const timer = setInterval(() => {
+      api<Config>("/api/config")
+        .then((c) => {
+          if (live) setPoints(c.points);
+        })
+        .catch(() => {});
+    }, 10000);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, []);
+  useEffect(() => {
+    if (!pending || !storageKey) return;
+    let live = true,
+      running = false;
+    const check = async () => {
+      if (running) return;
+      running = true;
+      try {
+        let result: DepositResult;
+        try {
+          result = await api(`/api/deposits/${pending.requestId}`);
+        } catch (error) {
+          if (error instanceof HttpError && error.status === 404)
+            result = await api("/api/deposits", pending);
+          else throw error;
+        }
+        if (!live) return;
+        setHash(result.txHash);
+        if (result.status === "confirmed") {
+          sessionStorage.removeItem(storageKey);
+          setPending(null);
+          setNotice(`Deposito confermato: ${pending.bottles} RCS accreditati.`);
+          void query.invalidateQueries();
+        } else if (result.status === "failed") {
+          sessionStorage.removeItem(storageKey);
+          setPending(null);
+          setNotice(result.error ?? "Deposito fallito.");
+        } else
+          setNotice(
+            result.error ?? "Deposito in attesa di conferma sulla blockchain.",
+          );
+      } catch (error) {
+        if (live)
+          setNotice(
+            `${message(error)} La richiesta resta salvata per il recupero.`,
+          );
+      } finally {
+        running = false;
+      }
+    };
+    void check();
+    const timer = setInterval(() => void check(), 2000);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [pending, storageKey, query]);
+  function navigate(target: "machine" | "store") {
+    history.pushState(
+      {},
+      "",
+      target === "machine" ? "/macchinetta" : "/supermercato",
+    );
+    setPage(target);
+    setQuote(null);
+    setNotice("");
+    setHash(null);
+  }
+  async function deposit() {
+    if (!address || !ready || action.current || pending) return;
+    action.current = true;
+    setBusy(true);
+    setNotice("Invio del deposito…");
+    setHash(null);
+    const input: Pending = {
+      requestId: crypto.randomUUID(),
+      recipient: address,
+      machineId,
+      bottles,
+    };
+    savePending(input);
+    try {
+      const result = await api<DepositResult>("/api/deposits", input);
+      setHash(result.txHash);
+    } catch (error) {
+      setNotice(message(error));
+      if (error instanceof HttpError && error.status === 400) savePending(null);
+    } finally {
+      setBusy(false);
+      action.current = false;
+    }
+  }
+  async function requestQuote() {
+    if (!address || !ready || action.current) return;
+    action.current = true;
+    setBusy(true);
+    setQuote(null);
+    setNotice("Preparazione del preventivo…");
+    setHash(null);
+    const captured = context;
+    try {
+      const result = await api<Quote>("/api/purchase-quotes", {
+        buyer: address,
+        storeId,
+        cart: items,
+      });
+      if (contextRef.current === captured) {
+        setQuote(result);
+        setNotice(
+          "Preventivo pronto. Controlla il totale e conferma nel wallet.",
+        );
+      }
+    } catch (error) {
+      if (contextRef.current === captured) setNotice(message(error));
+    } finally {
+      setBusy(false);
+      action.current = false;
+    }
+  }
+  async function purchase() {
+    if (!quote || expired || !address || !ready || action.current) return;
+    action.current = true;
+    setBusy(true);
+    setNotice("Controllo acquisto e conferma nel wallet…");
+    setHash(null);
+    const captured = context;
+    try {
+      const args = purchaseArgs(quote);
+      await client.simulateContract({
+        ...contract,
+        functionName: "purchase",
+        args,
+        account: address,
+      });
+      const tx = await write.mutateAsync({
+        ...contract,
+        functionName: "purchase",
+        args,
+        chainId: runtime.deployment.chainId,
+      });
+      setHash(tx);
+      setQuote(null);
+      setNotice("Acquisto inviato. Attendo la conferma sulla blockchain…");
+      const receipt = await client.waitForTransactionReceipt({ hash: tx });
+      if (receipt.status !== "success")
+        throw new Error("Transazione fallita. I crediti non sono stati spesi.");
+      void query.invalidateQueries();
+      if (contextRef.current === captured) {
+        setCart({});
+        setNotice(`Acquisto confermato: ${quote.maxTotal} RCS utilizzati.`);
+      }
+    } catch (error) {
+      if (contextRef.current === captured) {
+        setNotice(message(error));
+        if (!/rejected|denied/i.test(String(error))) setQuote(null);
+      }
+    } finally {
+      setBusy(false);
+      action.current = false;
+    }
+  }
+  const selected = (page === "machine" ? machines : stores).find(
+    (p) => p.id === (page === "machine" ? machineId : storeId),
+  );
+  return (
+    <>
+      <header>
+        <a
+          className="brand"
+          href="/macchinetta"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate("machine");
+          }}
+        >
+          <span className="mark">↻</span>
+          <span>
+            Riciclo<span className="brand-light"> Solidale</span>
+          </span>
+        </a>
+        <span className="network">● Hardhat · rete locale</span>
+      </header>
+      <main>
+        <section className="intro">
+          <div className="eyebrow">PICCOLI GESTI, RISORSE CONDIVISE</div>
+          <h1>
+            Ogni bottiglia
+            <br />
+            può fare la differenza.
+          </h1>
+          <p>
+            Conferisci bottiglie, ricevi crediti RCS e usali nei negozi
+            aderenti.
+          </p>
+        </section>
+        <section className="wallet" aria-label="Wallet">
+          <div>
+            <span className="label">IL TUO SALDO</span>
+            <div className="balance" data-testid="balance">
+              {address ? (balance.data?.toString() ?? "…") : "—"}{" "}
+              <span>RCS</span>
+            </div>
+            <p>
+              {address
+                ? `${short(address)} · ${eth.data ? Number(formatEther(eth.data.value)).toFixed(4) : "…"} ETH`
+                : "Collega il wallet per iniziare."}
+            </p>
+          </div>
+          <div>
+            {isConnected ? (
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={() => disconnect.mutate()}
+              >
+                Disconnetti
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setNotice("");
+                  connect.mutate(
+                    { connector: connect.connectors[0] },
+                    { onError: (error) => setNotice(message(error)) },
+                  );
+                }}
+                disabled={connect.isPending || !connect.connectors.length}
+              >
+                {connect.isPending ? "Connessione…" : "Collega MetaMask"}
+              </button>
+            )}
+          </div>
+        </section>
+        {!isConnected && typeof (window as any).ethereum === "undefined" && (
+          <p className="hint">
+            Per continuare, installa MetaMask e ricarica la pagina.
+          </p>
+        )}
+        {isConnected && !ready && (
+          <div className="warning" role="alert">
+            Il wallet è collegato a una rete diversa.{" "}
+            <button
+              className="secondary"
+              onClick={() =>
+                switchChain.mutate(
+                  { chainId: runtime.deployment.chainId },
+                  { onError: (error) => setNotice(message(error)) },
+                )
+              }
+            >
+              Passa alla rete della demo
+            </button>
+          </div>
+        )}
+        <nav aria-label="Operazioni">
+          <button
+            className={page === "machine" ? "tab active" : "tab"}
+            onClick={() => navigate("machine")}
+            disabled={busy}
+          >
+            01 <span>Conferisci bottiglie</span>
+          </button>
+          <button
+            className={page === "store" ? "tab active" : "tab"}
+            onClick={() => navigate("store")}
+            disabled={busy}
+          >
+            02 <span>Usa i tuoi crediti</span>
+          </button>
+        </nav>
+        <section className="panel">
+          <div className="panel-heading">
+            <div>
+              <div className="eyebrow">
+                {page === "machine" ? "LA MACCHINETTA" : "IL SUPERMERCATO"}
+              </div>
+              <h2>
+                {page === "machine"
+                  ? "Dai valore al tuo riciclo."
+                  : "Scegli la tua spesa."}
+              </h2>
+            </div>
+            <span className="round-icon">{page === "machine" ? "↻" : "▤"}</span>
+          </div>
+          <label className="field">
+            {page === "machine" ? "Punto di raccolta" : "Negozio aderente"}
+            <select
+              value={page === "machine" ? machineId : storeId}
+              disabled={busy || (page === "machine" && !!pending)}
+              onChange={(e) =>
+                page === "machine"
+                  ? setMachineId(e.target.value)
+                  : setStoreId(e.target.value)
+              }
+            >
+              {(page === "machine" ? machines : stores).map((p) => (
+                <option value={p.id} key={p.id}>
+                  {p.name} · Circoscrizione {p.zoneId}
+                </option>
+              ))}
+            </select>
+          </label>
+          {selected ? (
+            <p className="point">
+              ● {selected.name}{" "}
+              <span>Torino · Circoscrizione {selected.zoneId}</span>
+            </p>
+          ) : (
+            <p className="warning">
+              Nessun punto attivo disponibile. Seleziona un punto valido.
+            </p>
+          )}
+          {page === "machine" ? (
+            <>
+              <div className="deposit-row">
+                <label className="field">
+                  Bottiglie conferite
+                  <input
+                    aria-label="Bottiglie conferite"
+                    type="number"
+                    min="1"
+                    max="100"
+                    step="1"
+                    value={bottles}
+                    disabled={busy || !!pending}
+                    onChange={(e) =>
+                      setBottles(
+                        Math.max(
+                          0,
+                          Math.min(100, Math.trunc(Number(e.target.value))),
+                        ),
+                      )
+                    }
+                  />
+                </label>
+                <div className="conversion">
+                  <strong>{bottles} RCS</strong>
+                  <span>1 bottiglia = 1 credito</span>
+                </div>
+              </div>
+              <p className="hint">
+                Da 1 a 100 bottiglie per conferimento. Il punto di raccolta paga
+                il gas dell’accredito.
+              </p>
+              <button
+                className="full"
+                disabled={
+                  !ready || !selected || bottles < 1 || busy || !!pending
+                }
+                onClick={() => void deposit()}
+              >
+                {pending
+                  ? "Deposito in attesa…"
+                  : busy
+                    ? "Invio…"
+                    : "Conferma conferimento"}
+              </button>
+            </>
+          ) : (
+            <>
+              {products.error && (
+                <p className="warning">
+                  Catalogo non disponibile. Controlla la connessione alla rete.
+                </p>
+              )}
+              <div className="products">
+                {(products.data ?? []).map((p) => (
+                  <div className="product" key={p.id.toString()}>
+                    <div>
+                      <h3>{p.name}</h3>
+                      <span>{p.price.toString()} RCS / articolo</span>
+                    </div>
+                    <label>
+                      Quantità
+                      <input
+                        aria-label={`Quantità ${p.name}`}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={cart[p.id.toString()] ?? 0}
+                        disabled={busy}
+                        onChange={(e) =>
+                          setCart({
+                            ...cart,
+                            [p.id.toString()]: Math.max(
+                              0,
+                              Math.min(100, Math.trunc(Number(e.target.value))),
+                            ),
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <div className="total">
+                <span>Totale carrello</span>
+                <strong>{total.toString()} RCS</strong>
+              </div>
+              {items.length > 4 && (
+                <p className="warning">
+                  Puoi acquistare al massimo quattro prodotti distinti.
+                </p>
+              )}
+              {balance.data !== undefined && total > balance.data && (
+                <p className="warning">
+                  Crediti insufficienti. Conferisci altre bottiglie per
+                  completare questa spesa.
+                </p>
+              )}
+              {quote && (
+                <div className="quote">
+                  <strong>Totale confermato: {quote.maxTotal} RCS</strong>
+                  <span>
+                    {expired
+                      ? "Preventivo scaduto. Richiedine uno nuovo."
+                      : `Valido per altri ${Math.max(0, Math.ceil((Number(quote.deadline) * 1000 - now) / 1000))} secondi.`}
+                  </span>
+                </div>
+              )}
+              <div className="actions">
+                <button
+                  className="secondary"
+                  disabled={
+                    !ready ||
+                    !selected ||
+                    busy ||
+                    items.length === 0 ||
+                    items.length > 4 ||
+                    balance.data === undefined ||
+                    total > balance.data
+                  }
+                  onClick={() => void requestQuote()}
+                >
+                  {quote ? "Aggiorna preventivo" : "Richiedi preventivo"}
+                </button>
+                <button
+                  disabled={
+                    !ready ||
+                    !selected ||
+                    busy ||
+                    !quote ||
+                    expired ||
+                    eth.data?.value === 0n
+                  }
+                  onClick={() => void purchase()}
+                >
+                  {busy ? "Operazione in corso…" : "Conferma acquisto"}
+                </button>
+              </div>
+              {eth.data?.value === 0n && ready && (
+                <p className="warning">
+                  Servono ETH di test nel wallet per pagare il gas
+                  dell’acquisto.
+                </p>
+              )}
+            </>
+          )}
+        </section>
+        {notice && (
+          <div className="notice" role="status" aria-live="polite">
+            {notice}
+          </div>
+        )}
+        {hash && (
+          <p className="transaction">
+            Transazione <code data-testid="tx-hash">{hash}</code>
+          </p>
+        )}
+        <footer>
+          <strong>Una demo di economia solidale.</strong>
+          <p>
+            I conferimenti sono simulati. I crediti RCS non sono euro e non sono
+            trasferibili tra wallet.
+          </p>
+        </footer>
+      </main>
+    </>
+  );
+}
+async function bootstrap() {
+  const root = createRoot(document.getElementById("root")!);
+  try {
+    const runtime = await api<Config>("/api/config");
+    const chain = defineChain({
+      id: runtime.deployment.chainId,
+      name: "Hardhat locale",
+      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      rpcUrls: { default: { http: [runtime.rpcUrl] } },
+    });
+    const config = createConfig({
+      chains: [chain],
+      connectors: [injected()],
+      transports: { [chain.id]: http(runtime.rpcUrl) },
+    });
+    root.render(
+      <React.StrictMode>
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={new QueryClient()}>
+            <App runtime={runtime} />
+          </QueryClientProvider>
+        </WagmiProvider>
+      </React.StrictMode>,
+    );
+  } catch (error) {
+    root.render(
+      <main className="startup">
+        <h1>Riciclo Solidale</h1>
+        <p role="alert">{message(error)}</p>
+        <p>Avvia blockchain e backend dopo il deploy del contratto.</p>
+        <button onClick={() => location.reload()}>Riprova</button>
+      </main>,
+    );
+  }
+}
+void bootstrap();

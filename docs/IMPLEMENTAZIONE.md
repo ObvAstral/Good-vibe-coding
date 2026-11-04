@@ -1,6 +1,6 @@
 # Riciclo Solidale — specifica del modulo operativo
 
-Stato: specifica per lo sviluppo, non funzionalità già implementate.
+Stato: specifica di riferimento per il modulo operativo implementato. Per avvio, verifiche e limiti della demo leggere [AVVIO.md](AVVIO.md). Lo sviluppo e la demo usano esclusivamente Hardhat locale.
 
 ## Obiettivo e confini
 
@@ -16,7 +16,7 @@ I dettagli seguenti sono default implementativi scelti per rendere il lavoro ese
 - Solidity con OpenZeppelin Contracts 5.x; Hardhat per compilazione, test e rete locale. Bloccare le versioni compatibili nel lockfile al setup.
 - Backend Node.js e TypeScript per simulare i terminali autorizzati. Le chiavi dei terminali restano nel backend, mai in variabili VITE o nel browser.
 - Directory distinte `web/`, `contracts/`, `server/`; mantenere gli attuali script QVAC e il relativo archivio. Il planner del collega rimane indipendente.
-- Sviluppo su rete locale, demo condivisa su Sepolia. Usare solo fondi di test. L'utente necessita ETH di test per gli acquisti; il terminale paga il gas del mint.
+- Sviluppo e demo su rete Hardhat locale, chainId 31337, con account di sviluppo già dotati di ETH locali. Il terminale paga il gas del mint, l’acquirente quello dell’acquisto.
 - ABI, chainId, indirizzo del contratto e blocco di deploy esportati in un manifest condiviso. Il deploy genera il manifest prima dell'avvio dei moduli.
 
 ## Token e contratto

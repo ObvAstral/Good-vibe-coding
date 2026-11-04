@@ -1,0 +1,14 @@
+{
+  "name": "@riciclo/shared",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/protocol.ts",
+    "./deployment": "./src/deployment.ts",
+    "./local": "./src/local.ts",
+    "./abi": "./src/abi.ts"
+  },
+  "dependencies": {
+    "viem": "2.57.16"
+  }
+}

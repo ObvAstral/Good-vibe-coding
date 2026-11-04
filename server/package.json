@@ -1,0 +1,10 @@
+{
+  "name": "@riciclo/server",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@riciclo/shared": "*",
+    "fastify": "5.12.8",
+    "better-sqlite3": "13.0.3"
+  }
+}
